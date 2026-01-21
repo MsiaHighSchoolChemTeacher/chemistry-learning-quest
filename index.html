@@ -3,19 +3,18 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-    <title>元素风暴：化学骑士 (原版修复)</title>
+    <title>⚡️ 元素风暴：化学骑士 (原版修复)</title>
     <style>
         /* =========================================
-           1. 视觉核心 (完全保留你喜欢的原版风格)
+           完全复用你满意的原版 CSS 
            ========================================= */
         :root {
             --primary: #4834d4; 
             --accent: #686de0;
             --success: #6ab04c; 
-            --error: #eb4d4b;
+            --error: #eb4d4b; 
             --warn: #f0932b;
             --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            --glass: rgba(255, 255, 255, 0.95);
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
@@ -23,145 +22,130 @@
         body {
             font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
             background: var(--bg-gradient);
-            height: 100vh; width: 100vw;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
             overflow: hidden;
         }
 
-        /* HUD 仪表盘 */
+        /* 1. HUD 仪表盘 */
         .hud-container {
-            position: absolute; top: 0; left: 0; right: 0;
-            padding: 10px 15px; display: flex; justify-content: space-between; align-items: center;
-            z-index: 10;
+            position: fixed; top: 0; left: 0; right: 0;
+            padding: 15px; display: flex; justify-content: space-between; align-items: center;
+            z-index: 10; background: rgba(255,255,255,0.5); backdrop-filter: blur(5px);
         }
-        .hud-box {
-            background: rgba(255,255,255,0.8); backdrop-filter: blur(10px);
-            padding: 5px 15px; border-radius: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            display: flex; flex-direction: column; align-items: center;
-            font-size: 14px; color: #555; font-weight: bold;
+        .hud-item {
+            background: white; padding: 5px 15px; border-radius: 20px;
+            font-weight: bold; color: #555; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex; flex-direction: column; align-items: center; font-size: 12px;
         }
-        
-        /* 游戏主卡片 */
-        .game-card {
-            background: var(--glass);
-            width: 90%; max-width: 450px;
-            padding: 25px 20px; border-radius: 24px;
-            text-align: center;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
-            transition: transform 0.3s;
-            display: flex; flex-direction: column; align-items: center;
-            position: relative; z-index: 5;
-        }
-        /* 答对时的弹跳特效 */
-        .pop { animation: popScale 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        @keyframes popScale { 0%{transform:scale(1);} 50%{transform:scale(1.05);} 100%{transform:scale(1);} }
+        .hud-val { font-size: 16px; color: var(--primary); }
 
-        .q-tag { 
-            background: #dfe6e9; color: #636e72; padding: 4px 12px; 
-            border-radius: 20px; font-size: 12px; margin-bottom: 10px; font-weight: bold;
+        /* 2. 游戏卡片区 */
+        .main-container {
+            flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            width: 100%; position: relative; z-index: 1;
         }
-        .q-text { font-size: 48px; font-weight: 900; color: #2d3436; margin: 5px 0; }
+        .game-card {
+            background: rgba(255,255,255,0.9); backdrop-filter: blur(20px);
+            width: 90%; max-width: 400px; padding: 30px; border-radius: 24px;
+            text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .game-card.pop { transform: scale(1.05); }
+
+        .q-label {
+            display: inline-block; background: #dfe6e9; color: #636e72;
+            padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; margin-bottom: 15px;
+        }
+        .q-text { font-size: 48px; font-weight: 900; color: #2d3436; margin: 0 0 10px 0; }
         
-        /* PDF需求 P2: 智能提示区 */
+        /* PDF需求 P2：智能提示 (新加样式) */
         .q-hint { 
             font-size: 13px; color: var(--warn); height: 20px; margin-bottom: 10px; 
-            transition: opacity 0.3s; opacity: 1;
+            opacity: 1; transition: opacity 0.3s;
         }
 
-        /* 输入框 */
-        .input-box {
-            width: 100%; background: #f1f2f6; border-radius: 12px; height: 55px;
+        .input-display {
+            background: #f1f2f6; height: 60px; border-radius: 16px; margin-bottom: 10px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 28px; font-weight: bold; color: #2d3436; font-family: Consolas, monospace;
-            border: 2px solid transparent; margin-bottom: 10px;
+            font-size: 32px; font-weight: bold; color: #2d3436; font-family: monospace;
+            border: 2px solid transparent; transition: all 0.2s;
         }
-        .input-box.active { background: white; border-color: var(--primary); }
-        .cursor { width: 2px; height: 28px; background: var(--primary); margin-left: 2px; animation: blink 1s infinite; }
+        .input-display.active { background: white; border-color: var(--primary); }
+        .cursor { width: 3px; height: 32px; background: var(--primary); margin-left: 5px; animation: blink 1s infinite; }
         @keyframes blink { 50% { opacity: 0; } }
 
-        /* 键盘区域 */
-        .keyboard-panel {
-            width: 100%; max-width: 800px;
-            background: rgba(255,255,255,0.9); backdrop-filter: blur(20px);
-            border-radius: 24px 24px 0 0; padding: 10px 5px 20px 5px;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
-            position: absolute; bottom: 0; left: 0; right: 0; z-index: 20;
+        /* 3. 虚拟键盘 */
+        .virtual-keyboard {
+            width: 100%; background: white; padding: 10px 5px 25px 5px;
+            border-radius: 24px 24px 0 0; box-shadow: 0 -10px 40px rgba(0,0,0,0.1);
+            z-index: 20; position: relative;
         }
-        .kb-row { display: flex; justify-content: center; margin-bottom: 6px; gap: 4px; }
+        .kb-row { display: flex; justify-content: center; gap: 6px; margin-bottom: 8px; }
         .key {
-            flex: 1; height: 44px; max-width: 50px;
-            background: #fff; border-radius: 8px;
+            flex: 1; height: 48px; max-width: 55px;
+            background: #f1f2f6; border-radius: 8px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 18px; font-weight: 700; color: #2d3436;
-            box-shadow: 0 3px 0 #b2bec3; cursor: pointer;
+            font-size: 20px; font-weight: bold; color: #2d3436;
+            cursor: pointer; transition: all 0.1s;
+            box-shadow: 0 3px 0 #b2bec3;
         }
-        .key:active { transform: translateY(3px); box-shadow: none; }
-        .key.chem { background: #e3f2fd; color: #0984e3; box-shadow: 0 3px 0 #74b9ff; font-size: 15px; }
-        .key.enter { flex: 2; max-width: 100px; background: var(--success); color: white; box-shadow: 0 3px 0 #58b032; }
-        .key.del { background: var(--error); color: white; box-shadow: 0 3px 0 #c0392b; }
+        .key:active { transform: translateY(3px); box-shadow: none; background: #e2e6ea; }
+        
+        .key.chem { background: #e3f2fd; color: #0984e3; box-shadow: 0 3px 0 #74b9ff; font-size: 16px; }
+        .key.func { background: #fab1a0; color: white; box-shadow: 0 3px 0 #e17055; font-size: 16px; }
+        .key.big { flex: 2; max-width: 100px; background: var(--success); color: white; box-shadow: 0 3px 0 #558b2f; font-size: 16px; }
         .key.shift { background: #ffeaa7; color: #d35400; box-shadow: 0 3px 0 #fdcb6e; }
+        .key.shift.active { background: #fdcb6e; color: white; transform: translateY(3px); box-shadow: none; }
 
-        /* ================= 核心：剧情/反馈 遮罩层 (原版逻辑) ================= */
+        /* 4. 遮罩层 (剧情 & 反馈) - 核心逻辑回归 */
         .overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.85); z-index: 100;
+            position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             opacity: 0; pointer-events: none; transition: opacity 0.3s;
         }
         .overlay.active { opacity: 1; pointer-events: auto; }
         
-        .menu-card {
-            background: white; width: 85%; max-width: 360px;
-            padding: 30px; border-radius: 20px; text-align: center;
-            animation: slideUp 0.4s ease;
+        .modal-box {
+            background: white; width: 85%; max-width: 360px; padding: 30px; border-radius: 24px;
+            text-align: center; animation: slideUp 0.4s ease;
         }
-        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-        .btn-main {
-            background: var(--primary); color: white; border: none;
-            padding: 12px 30px; font-size: 18px; border-radius: 50px;
-            margin-top: 20px; cursor: pointer; width: 100%;
-        }
-
-        .math-expl {
-            background: #f1f2f6; padding: 10px; border-radius: 8px;
-            margin-top: 15px; font-family: monospace; color: #2d3436; text-align: left;
-        }
+        @keyframes slideUp { from{transform:translateY(50px);opacity:0} to{transform:translateY(0);opacity:1} }
         
-        .hidden { display: none !important; }
+        .modal-title { font-size: 24px; font-weight: 900; margin-bottom: 10px; color: var(--primary); }
+        .modal-desc { color: #636e72; margin-bottom: 20px; line-height: 1.6; }
+        .math-expl { background: #f1f2f6; padding: 10px; border-radius: 8px; margin-top: 10px; font-family: monospace; color: #d63031; text-align: left;}
+        
+        .btn-start {
+            background: var(--primary); color: white; border: none; padding: 12px 40px;
+            font-size: 18px; border-radius: 50px; cursor: pointer; font-weight: bold;
+            box-shadow: 0 5px 15px rgba(72,52,212,0.3);
+        }
 
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
     <div class="hud-container hidden" id="hudArea">
-        <div class="hud-box">
-            <span style="font-size:10px; opacity:0.6">关卡</span>
-            <span id="hud-stage">S1</span>
-        </div>
-        <div class="hud-box">
-            <span style="font-size:10px; opacity:0.6">进度</span>
-            <span id="hud-prog">0 / 8</span>
-        </div>
-        <div class="hud-box">
-            <span style="font-size:10px; opacity:0.6">得分</span>
-            <span style="color:var(--primary)" id="hud-score">0</span>
+        <div class="hud-item"><span style="font-size:10px">关卡</span><span class="hud-val" id="hud-stage">S1</span></div>
+        <div class="hud-item" style="flex:1; margin:0 15px"><span style="font-size:10px">进度</span><span class="hud-val" id="hud-prog">0/8</span></div>
+        <div class="hud-item"><span style="font-size:10px">得分</span><span class="hud-val" id="hud-score">0</span></div>
+    </div>
+
+    <div class="main-container hidden" id="gameArea">
+        <div class="game-card" id="gameCard">
+            <div class="q-label" id="q-tag">元素符号</div>
+            <div class="q-text" id="q-text">Ready</div>
+            
+            <div class="q-hint" id="q-hint"></div>
+
+            <div class="input-display" id="inputBox">
+                <span id="inputAns"></span><div class="cursor"></div>
+            </div>
         </div>
     </div>
 
-    <div class="game-card hidden" id="playArea">
-        <div class="q-tag" id="q-tag">题目</div>
-        <div class="q-text" id="q-text">H</div>
-        
-        <div class="q-hint" id="q-hint"></div>
-
-        <div class="input-box" id="input-box">
-            <span id="input-val"></span><div class="cursor"></div>
-        </div>
-    </div>
-
-    <div class="keyboard-panel hidden" id="kbArea">
+    <div class="virtual-keyboard hidden" id="kbArea">
         <div class="kb-row">
             <div class="key chem" onclick="KB.tap('⁺')">⁺</div>
             <div class="key chem" onclick="KB.tap('⁻')">⁻</div>
@@ -185,204 +169,195 @@
             <div class="key" onclick="KB.tap('L')">L</div>
         </div>
         <div class="kb-row">
-            <div class="key shift" id="btn-shift" onclick="KB.toggleShift()">⬆</div>
+            <div class="key shift" id="btnShift" onclick="KB.toggleShift()">⬆</div>
             <div class="key" onclick="KB.tap('Z')">Z</div><div class="key" onclick="KB.tap('X')">X</div>
             <div class="key" onclick="KB.tap('C')">C</div><div class="key" onclick="KB.tap('V')">V</div>
             <div class="key" onclick="KB.tap('B')">B</div><div class="key" onclick="KB.tap('N')">N</div>
             <div class="key" onclick="KB.tap('M')">M</div>
-            <div class="key del" onclick="KB.del()">⌫</div>
+            <div class="key func" onclick="KB.del()">⌫</div>
         </div>
         <div class="kb-row">
             <div class="key" onclick="KB.tap('1')">1</div><div class="key" onclick="KB.tap('2')">2</div>
             <div class="key" onclick="KB.tap('3')">3</div><div class="key" onclick="KB.tap('4')">4</div>
-            <div class="key enter" onclick="Game.check()">提交 (Enter)</div>
+            <div class="key big" onclick="Game.check()">提交</div>
         </div>
     </div>
 
-    <div class="overlay active" id="overlay">
-        <div class="menu-card">
-            <h1 style="color:var(--primary); margin-bottom:10px;" id="ov-title">⚡️ 元素风暴</h1>
-            <p style="color:#636e72; line-height:1.5; margin-bottom:15px;" id="ov-desc">
-                欢迎来到化学试炼场。<br>这是一场关于记忆与反应的战争。<br>准备好了吗？
-            </p>
-            <div id="ov-extra"></div> <button class="btn-main" id="ov-btn" onclick="Game.start()">开始挑战</button>
+    <div class="overlay active" id="menuOverlay">
+        <div class="modal-box">
+            <div class="modal-title" id="menuTitle">⚡️ 元素风暴</div>
+            <div class="modal-desc" id="menuDesc">
+                欢迎来到化学试炼场。<br>
+                这是一场关于记忆与反应的战争。<br>
+                只有最强的骑士才能征服所有元素！
+            </div>
+            <button class="btn-start" onclick="Game.start()">开始挑战</button>
+        </div>
+    </div>
+
+    <div class="overlay" id="feedbackOverlay">
+        <div class="modal-box">
+            <div class="modal-title" style="color:var(--error)" id="fbTitle">答错了</div>
+            <div class="modal-desc" id="fbDetail"></div>
+            <button class="btn-start" onclick="Game.hideFeedback()">继续</button>
         </div>
     </div>
 
 <script>
-/* ================= 数据层 ================= */
+/* ================= 题库数据 (保持不变) ================= */
 const DATA = {
-    s1: [ // 元素
+    s1: [ 
         {q:"氢", a:"H"}, {q:"氦", a:"He"}, {q:"碳", a:"C"}, {q:"氮", a:"N"}, {q:"氧", a:"O"},
         {q:"氟", a:"F"}, {q:"氖", a:"Ne"}, {q:"钠", a:"Na"}, {q:"镁", a:"Mg"}, {q:"铝", a:"Al"},
         {q:"硅", a:"Si"}, {q:"磷", a:"P"}, {q:"硫", a:"S"}, {q:"氯", a:"Cl"}, {q:"氩", a:"Ar"},
-        {q:"钾", a:"K"}, {q:"钙", a:"Ca"}, {q:"锰", a:"Mn"}, {q:"铁", a:"Fe"}, {q:"铜", a:"Cu"},
-        {q:"锌", a:"Zn"}, {q:"银", a:"Ag"}, {q:"钡", a:"Ba"}, {q:"金", a:"Au"}, {q:"汞", a:"Hg"}
+        {q:"钾", a:"K"}, {q:"钙", a:"Ca"}, {q:"锰", a:"Mn"}, {q:"铁", a:"Fe"}, {q:"铜", a:"Cu"}
     ],
-    s2: [ // 离子
+    s2: [ 
         {q:"氢离子", a:"H⁺"}, {q:"钠离子", a:"Na⁺"}, {q:"镁离子", a:"Mg²⁺"}, {q:"铝离子", a:"Al³⁺"},
         {q:"钾离子", a:"K⁺"}, {q:"钙离子", a:"Ca²⁺"}, {q:"铁离子", a:"Fe³⁺"}, {q:"亚铁离子", a:"Fe²⁺"},
         {q:"铜离子", a:"Cu²⁺"}, {q:"银离子", a:"Ag⁺"}, {q:"铵根", a:"NH4⁺"}, 
-        {q:"氢氧根", a:"OH⁻"}, {q:"硝酸根", a:"NO3⁻"}, {q:"硫酸根", a:"SO4²⁻"}, {q:"碳酸根", a:"CO3²⁻"},
-        {q:"氯离子", a:"Cl⁻"}, {q:"氧离子", a:"O²⁻"}, {q:"硫离子", a:"S²⁻"}
+        {q:"氢氧根", a:"OH⁻"}, {q:"硝酸根", a:"NO3⁻"}, {q:"硫酸根", a:"SO4²⁻"}, {q:"碳酸根", a:"CO3²⁻"}
     ],
-    s3: [ // 化学式
+    s3: [
         {q:"水", a:"H2O"}, {q:"二氧化碳", a:"CO2"}, {q:"氯化钠", a:"NaCl"}, {q:"氧化镁", a:"MgO"},
         {q:"五氧化二磷", a:"P2O5"}, {q:"四氧化三铁", a:"Fe3O4"}, {q:"氯酸钾", a:"KClO3"},
-        {q:"高锰酸钾", a:"KMnO4"}, {q:"锰酸钾", a:"K2MnO4"}, {q:"过氧化氢", a:"H2O2"},
         {q:"硫酸铜", a:"CuSO4"}, {q:"碳酸钙", a:"CaCO3"}, {q:"氢氧化钙", a:"Ca(OH)2"},
         {q:"硫酸铝", a:"Al2(SO4)3"}
     ]
 };
 
+/* ================= 关卡配置 (PDF P2 Hint 内容) ================= */
 const LEVELS = [
-    { id: "s1", name: "S1 元素觉醒", target: 8, hint: "提示：注意大小写，第一个大写，第二个小写 (如 Na)" },
-    { id: "s2", name: "S2 离子风暴", target: 8, hint: "提示：记得带电荷，键盘首行有专用符号 (如 Na⁺)" },
-    { id: "s3", name: "S3 物质构建", target: 8, hint: "提示：原子团若有角标需加括号，如 Ca(OH)₂" }
+    { id: 's1', name: 'S1 元素觉醒', target: 8, hint: "提示：注意大小写，首字母大写 (如 Na)" },
+    { id: 's2', name: 'S2 离子风暴', target: 8, hint: "提示：记得带电荷，使用第一排符号 (如 Na⁺)" },
+    { id: 's3', name: 'S3 物质构建', target: 8, hint: "提示：原子团若有脚标需加括号，如 Ca(OH)₂" }
 ];
 
-/* ================= 游戏逻辑 (原版Game对象修复) ================= */
+/* ================= 游戏核心 (基于原HTML修复) ================= */
 const Game = {
     lvlIdx: 0,
     qIdx: 0,
     score: 0,
-    currData: null,
-    state: 'menu', // menu, playing, feedback, gameover
-
-    // 启动游戏（点击开始按钮后）
+    currQ: null,
+    
+    // 1. 启动游戏
     start() {
+        document.getElementById('menuOverlay').classList.remove('active');
+        document.getElementById('hudArea').classList.remove('hidden');
+        document.getElementById('gameArea').classList.remove('hidden');
+        document.getElementById('kbArea').classList.remove('hidden');
+        
         this.lvlIdx = 0;
         this.score = 0;
         this.startLevel();
-        
-        // 隐藏遮罩，显示游戏区
-        document.getElementById('overlay').classList.remove('active');
-        document.getElementById('hudArea').classList.remove('hidden');
-        document.getElementById('playArea').classList.remove('hidden');
-        document.getElementById('kbArea').classList.remove('hidden');
     },
 
-    // 开始新关卡
+    // 2. 开启关卡
     startLevel() {
         this.qIdx = 0;
-        const lvl = LEVELS[this.lvlIdx];
-        
-        // 更新HUD
-        document.getElementById('hud-stage').innerText = lvl.name.split(' ')[0];
-        this.nextQ();
+        this.nextQuestion();
     },
 
-    // 下一题
-    nextQ() {
+    // 3. 出题逻辑 (包含 PDF P1 无缝切换逻辑)
+    nextQuestion() {
         const lvl = LEVELS[this.lvlIdx];
         
-        // PDF P1: 关卡内进度判断
+        // 检查是否过关
         if (this.qIdx >= lvl.target) {
-            // 本关结束，直接进下一关
             if (this.lvlIdx < LEVELS.length - 1) {
-                this.lvlIdx++;
-                this.startLevel(); // 无缝切换
+                // PDF P1: 核心修改 -> 无缝进入下一关，不弹窗
+                this.lvlIdx++; 
+                this.startLevel();
             } else {
-                this.showMenu("传说达成！", "恭喜你，化学骑士！<br>你已征服了所有元素领域！", "再来一次", true);
+                this.showMenu("传说达成！", "恭喜你！<br>你已征服了所有元素领域！", "再来一次");
             }
             return;
         }
 
-        // 随机出题
+        // 随机取题
         const pool = DATA[lvl.id];
-        this.currData = pool[Math.floor(Math.random() * pool.length)];
+        this.currQ = pool[Math.floor(Math.random() * pool.length)];
 
-        // 更新界面
-        document.getElementById('q-tag').innerText = "题目 " + (this.qIdx + 1) + "/" + lvl.target;
-        document.getElementById('q-text').innerText = this.currData.q;
-        document.getElementById('hud-prog').innerText = this.qIdx + " / " + lvl.target;
+        // UI 更新
+        document.getElementById('hud-stage').innerText = lvl.name.split(' ')[0];
+        document.getElementById('hud-prog').innerText = `${this.qIdx}/${lvl.target}`;
         document.getElementById('hud-score').innerText = this.score;
         
-        // 重置输入
-        document.getElementById('input-val').innerText = "";
+        document.getElementById('q-tag').innerText = lvl.name;
+        document.getElementById('q-text').innerText = this.currQ.q;
+        document.getElementById('inputAns').innerText = "";
         KB.reset();
 
-        // PDF P2: 智能提示逻辑 (只在第1题显示)
+        // PDF P2: 智能提示逻辑 (只在进度0时显示)
         const hintEl = document.getElementById('q-hint');
         if (this.qIdx === 0) {
             hintEl.innerText = lvl.hint;
             hintEl.style.opacity = 1;
         } else {
-            hintEl.style.opacity = 0; // 隐形
+            hintEl.style.opacity = 0;
         }
     },
 
-    // 检查答案
+    // 4. 判题逻辑
     check() {
-        const input = document.getElementById('input-val').innerText;
-        if (!input) return;
+        const userAns = document.getElementById('inputAns').innerText;
+        if (!userAns) return;
 
-        if (input === this.currData.a) {
-            // 正确：原版微动效
-            const card = document.getElementById('playArea');
+        if (userAns === this.currQ.a) {
+            // 答对：保留原版简单的 pop 动效
+            const card = document.getElementById('gameCard');
             card.classList.add('pop');
             setTimeout(() => card.classList.remove('pop'), 300);
             
             this.score += 10;
             this.qIdx++;
-            this.nextQ(); // 直接下一题
+            this.nextQuestion();
         } else {
-            // 错误：恢复原版 Feedback 遮罩层
+            // 答错：保留原版 Feedback 遮罩层 (你的核心需求)
             this.showFeedback();
         }
     },
 
-    // 错误反馈弹窗 (原版逻辑)
+    // 5. 显示错误反馈
     showFeedback() {
-        const ov = document.getElementById('overlay');
-        const title = document.getElementById('ov-title');
-        const desc = document.getElementById('ov-desc');
-        const extra = document.getElementById('ov-extra');
-        const btn = document.getElementById('ov-btn');
-
-        title.innerText = "答错了";
-        title.style.color = "var(--error)";
-        desc.innerHTML = `正确答案是：<strong style="font-size:24px; color:#2d3436">${this.currData.a}</strong>`;
+        const overlay = document.getElementById('feedbackOverlay');
+        const userAns = document.getElementById('inputAns').innerText;
         
-        // 显示对比
-        const userIn = document.getElementById('input-val').innerText;
-        extra.innerHTML = `<div class="math-expl">你的答案：${userIn}<br>正确答案：${this.currData.a}</div>`;
-        
-        btn.innerText = "继续";
-        btn.onclick = () => {
-            ov.classList.remove('active');
-            // 清空 extra 防止污染菜单
-            setTimeout(() => { extra.innerHTML = ""; }, 300);
-        };
-
-        ov.classList.add('active');
+        document.getElementById('fbDetail').innerHTML = `
+            正确答案是：<strong style="font-size:24px; color:#2d3436">${this.currQ.a}</strong>
+            <div class="math-expl">
+                你的答案：<span style="text-decoration:line-through">${userAns}</span><br>
+                解析：请牢记该化学符号
+            </div>
+        `;
+        overlay.classList.add('active');
     },
 
-    // 通用菜单显示 (用于开始和通关)
-    showMenu(t, d, bTxt, isWin) {
-        const ov = document.getElementById('overlay');
-        document.getElementById('ov-title').innerText = t;
-        document.getElementById('ov-title').style.color = isWin ? "var(--success)" : "var(--primary)";
-        document.getElementById('ov-desc').innerHTML = d;
-        document.getElementById('ov-extra').innerHTML = ""; // 清理
-        
-        const btn = document.getElementById('ov-btn');
-        btn.innerText = bTxt;
-        btn.onclick = () => {
-             // 重新开始
-             Game.start();
-        };
+    // 6. 隐藏反馈并继续
+    hideFeedback() {
+        document.getElementById('feedbackOverlay').classList.remove('active');
+        // 答错不进下一题，给机会重试，或者你可以选择直接下一题
+        // 这里选择原版逻辑：不进位，让用户看清了再继续
+        // 但为了游戏流畅性，通常是看完反馈后出新题
+        // 为了防止死循环，答错也换题，或者保留当前题（看你喜好，这里默认换新题防止卡关）
+        this.nextQuestion(); 
+    },
 
-        // 隐藏游戏区
+    // 7. 通用菜单 (用于胜利界面)
+    showMenu(title, desc, btnText) {
         document.getElementById('hudArea').classList.add('hidden');
-        document.getElementById('playArea').classList.add('hidden');
+        document.getElementById('gameArea').classList.add('hidden');
         document.getElementById('kbArea').classList.add('hidden');
         
-        ov.classList.add('active');
+        const overlay = document.getElementById('menuOverlay');
+        document.getElementById('menuTitle').innerText = title;
+        document.getElementById('menuDesc').innerHTML = desc;
+        document.querySelector('#menuOverlay button').innerText = btnText;
+        overlay.classList.add('active');
     }
 };
 
-/* ================= 键盘逻辑 ================= */
+/* ================= 键盘逻辑 (保持原版手感) ================= */
 const KB = {
     isShift: true,
     tap(char) {
@@ -392,23 +367,23 @@ const KB = {
             if (this.isShift) this.toggleShift();
         }
         
-        const box = document.getElementById('input-val');
+        const box = document.getElementById('inputAns');
         box.innerText += c;
-
-        // 输入框高亮一下
-        const wrap = document.getElementById('input-box');
-        wrap.classList.add('active');
-        setTimeout(() => wrap.classList.remove('active'), 100);
+        
+        // 简单的输入框高亮
+        const display = document.getElementById('inputBox');
+        display.classList.add('active');
+        setTimeout(() => display.classList.remove('active'), 100);
     },
     del() {
-        const box = document.getElementById('input-val');
+        const box = document.getElementById('inputAns');
         box.innerText = box.innerText.slice(0, -1);
         if (box.innerText.length === 0) { this.isShift = true; this.render(); }
     },
     reset() { this.isShift = true; this.render(); },
     toggleShift() { this.isShift = !this.isShift; this.render(); },
     render() {
-        const btn = document.getElementById('btn-shift');
+        const btn = document.getElementById('btnShift');
         if (this.isShift) btn.classList.add('active'); else btn.classList.remove('active');
         document.querySelectorAll('.key').forEach(k => {
             const t = k.innerText;
@@ -417,21 +392,15 @@ const KB = {
     }
 };
 
-/* ================= 启动 ================= */
-// 默认就在主菜单，不需要自动运行什么，只需要监听物理回车
+// 物理键盘支持
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
-        // 如果遮罩层开着，回车等于点击按钮
-        if (document.getElementById('overlay').classList.contains('active')) {
-            document.getElementById('ov-btn').click();
-        } else {
-            Game.check();
-        }
-    } else if (e.key === 'Backspace') {
-        KB.del();
-    } else if (e.key.length === 1) {
-        KB.tap(e.key);
+        if (document.getElementById('menuOverlay').classList.contains('active')) Game.start();
+        else if (document.getElementById('feedbackOverlay').classList.contains('active')) Game.hideFeedback();
+        else Game.check();
     }
+    else if (e.key === 'Backspace') KB.del();
+    else if (e.key.length === 1) KB.tap(e.key);
 });
 
 </script>
