@@ -3,269 +3,176 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-    <title>⚡️ 元素风暴：终极教学版</title>
+    <title>元素风暴：最终复仇版</title>
     <style>
-        /* ==========================================================================
-           1. 视觉核心：保留原版美学，注入3A特效变量
-           ========================================================================== */
+        /* =========================================
+           1. 视觉核心 (基于你最爱的原版配色)
+           ========================================= */
         :root {
-            --primary: #6c5ce7; 
-            --primary-dark: #4834d4;
+            --primary: #4834d4; 
+            --primary-light: #686de0;
             --accent: #00d2d3;
-            --success: #00b894; 
-            --error: #ff7675; 
-            --warn: #fdcb6e;
-            --glass: rgba(255, 255, 255, 0.85);
-            --glass-border: 1px solid rgba(255, 255, 255, 0.6);
-            --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-            --bg-normal: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+            --success: #6ab04c; 
+            --error: #eb4d4b;
+            --bg-normal: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             /* BOSS战专属红黑氛围 */
             --bg-boss: radial-gradient(circle at center, #2d3436 0%, #000000 100%);
+            --glass: rgba(255, 255, 255, 0.9);
+            --glass-boss: rgba(30, 30, 30, 0.9);
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
         
         body {
-            font-family: 'Segoe UI', 'Microsoft YaHei', -apple-system, sans-serif;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
             background: var(--bg-normal);
             height: 100vh; width: 100vw;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            overflow: hidden; /* 彻底锁死滚动 */
-            transition: background 1.5s ease; /* 背景切换动画 */
+            overflow: hidden;
+            transition: background 1.5s ease; /* 背景平滑切换 */
         }
 
-        /* BOSS 模式下的全局样式覆写 */
+        /* 3A特效：屏幕震动类 */
+        .shake-screen { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(4px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-6px, 0, 0); } 40%, 60% { transform: translate3d(6px, 0, 0); } }
+
+        /* BOSS模式状态 */
         body.boss-mode { background: var(--bg-boss); }
-        body.boss-mode .hud-box { background: rgba(50,50,50,0.7); color: #fff; border: 1px solid var(--error); }
-        body.boss-mode .game-card { background: rgba(30,30,30,0.9); border: 1px solid var(--error); box-shadow: 0 0 50px rgba(214, 48, 49, 0.3); }
-        body.boss-mode .q-display { color: var(--error); text-shadow: 0 0 10px rgba(214, 48, 49, 0.5); }
-        body.boss-mode .key { background: #444; color: #fff; border-bottom-color: #222; }
-        body.boss-mode .input-container { background: #2d3436; border-color: #636e72; color: #fff; }
+        body.boss-mode .hud-box, body.boss-mode .keyboard-panel { background: var(--glass-boss); color: white; border: 1px solid var(--error); }
+        body.boss-mode .key { background: #444; color: white; box-shadow: 0 4px 0 #222; }
+        body.boss-mode .key:active { box-shadow: none; transform: translateY(4px); }
+        body.boss-mode .q-text { color: var(--error); text-shadow: 0 0 15px var(--error); }
 
-        /* 背景粒子层 */
-        #particles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
-        .bg-particle {
-            position: absolute; border-radius: 50%; opacity: 0.3;
-            animation: floatUp linear infinite;
-        }
-        @keyframes floatUp { from { transform: translateY(100vh) rotate(0deg); } to { transform: translateY(-10vh) rotate(360deg); } }
-
-        /* HUD 仪表盘 (顶部) */
+        /* HUD 仪表盘 */
         .hud-container {
-            position: absolute; top: 0; left: 0; right: 0; height: 70px;
+            position: absolute; top: 0; left: 0; right: 0;
             padding: 10px 15px; display: flex; justify-content: space-between; align-items: center;
-            z-index: 20; pointer-events: none;
+            z-index: 20; height: 70px;
         }
         .hud-box {
             background: var(--glass); backdrop-filter: blur(10px);
-            padding: 5px 15px; border-radius: 16px; border: var(--glass-border);
-            box-shadow: var(--shadow);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            transition: all 0.5s;
+            padding: 5px 15px; border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            display: flex; flex-direction: column; align-items: center;
+            transition: all 0.5s; min-width: 70px;
         }
-        .lives { font-size: 20px; color: var(--error); letter-spacing: 2px; }
+        .bar-frame { width: 100px; height: 8px; background: rgba(0,0,0,0.1); border-radius: 4px; margin-top: 4px; overflow: hidden; }
+        .bar-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s; }
         
-        /* 进度条/BOSS血条 */
-        .bar-container { width: 120px; height: 8px; background: rgba(0,0,0,0.1); border-radius: 4px; overflow: hidden; margin-top: 4px; }
-        .bar-fill { height: 100%; width: 0%; background: var(--primary); transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .boss-hp .bar-fill { background: var(--error); box-shadow: 0 0 10px var(--error); }
-
-        /* ==========================================================================
-           2. 游戏主舞台 (卡片区)
-           ========================================================================== */
-        .game-stage {
-            position: relative; z-index: 10;
-            width: 94%; max-width: 600px;
-            flex-grow: 1; display: flex; flex-direction: column; justify-content: center;
-            perspective: 1000px;
+        /* 游戏主舞台 */
+        .arena {
+            flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            width: 100%; position: relative; z-index: 10;
         }
-
-        .game-card {
-            background: var(--glass); backdrop-filter: blur(20px);
-            border: var(--glass-border); border-radius: 24px;
-            padding: 20px; text-align: center;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
-            transition: all 0.3s;
-            position: relative;
-            /* 浮动动画 */
-            animation: cardFloat 6s ease-in-out infinite; 
+        
+        .q-card {
+            background: rgba(255,255,255,0.85); backdrop-filter: blur(20px);
+            width: 90%; max-width: 500px;
+            padding: 20px; border-radius: 24px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            transition: transform 0.3s, background 0.5s;
         }
-        @keyframes cardFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-
-        /* 题目区域 */
+        
         .q-tag { 
-            display: inline-block; background: #636e72; color: #fff; 
-            padding: 4px 12px; border-radius: 20px; font-size: 12px; 
-            font-weight: bold; letter-spacing: 1px; text-transform: uppercase;
-            margin-bottom: 10px;
+            display: inline-block; background: #dfe6e9; color: #636e72; 
+            padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; margin-bottom: 10px; 
         }
-        .q-display { 
-            font-size: 48px; font-weight: 900; color: #2d3436; 
-            min-height: 70px; margin-bottom: 5px;
-            display: flex; align-items: center; justify-content: center; 
-            gap: 15px; /* 复合题目间距 */
-        }
+        .q-text { font-size: 42px; font-weight: 900; color: #2d3436; margin: 10px 0; min-height: 60px; }
         
-        /* 智能提示 (PDF要求：仅第1题显示) */
-        .smart-hint {
-            height: 20px; font-size: 13px; color: #b2bec3; font-weight: 500;
-            margin-bottom: 15px; transition: opacity 0.5s; opacity: 1;
+        /* === PDF P2 核心需求：智能提示 === */
+        .q-hint { 
+            height: 20px; font-size: 13px; color: #b2bec3; margin-bottom: 15px; 
+            transition: opacity 0.3s; opacity: 1; 
         }
-        .hint-hidden { opacity: 0; }
 
-        /* 仿真输入框 (用于显示，不接受直接输入，防止软键盘弹出) */
-        .input-container {
-            background: #f1f2f6; border: 2px solid transparent;
-            border-radius: 16px; height: 60px;
+        /* 模拟输入框 */
+        .input-box {
+            background: #f1f2f6; border-radius: 16px; height: 60px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 32px; font-weight: bold; font-family: Consolas, monospace;
-            color: #2d3436; margin-bottom: 10px;
-            box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
-            transition: all 0.2s; cursor: text;
+            font-size: 28px; font-weight: bold; color: #2d3436; font-family: Consolas, monospace;
+            border: 2px solid transparent; transition: all 0.2s;
+            position: relative; overflow: hidden;
         }
-        .input-container.active { background: #fff; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.2); }
-        .input-container.error { animation: shake 0.4s; border-color: var(--error); color: var(--error); }
-        
-        /* 光标动画 */
-        .cursor { width: 3px; height: 36px; background: var(--primary); margin-left: 4px; animation: blink 1s infinite; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        .input-box.active { background: white; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(72, 52, 212, 0.2); }
+        .cursor { width: 2px; height: 30px; background: var(--primary); margin-left: 2px; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
 
-        /* ==========================================================================
-           3. 战术键盘 (核心交互)
-           ========================================================================== */
+        /* 虚拟键盘区 */
         .keyboard-panel {
             width: 100%; max-width: 800px;
-            background: rgba(255,255,255,0.9); backdrop-filter: blur(20px);
-            border-radius: 24px 24px 0 0;
-            padding: 10px 5px 20px 5px;
+            background: rgba(255,255,255,0.95); backdrop-filter: blur(20px);
+            border-radius: 24px 24px 0 0; padding: 10px 5px 25px 5px;
             box-shadow: 0 -10px 40px rgba(0,0,0,0.1);
-            z-index: 100; transition: all 0.3s;
-            position: relative; bottom: 0;
+            z-index: 100; transition: all 0.5s;
         }
-        body.boss-mode .keyboard-panel { background: rgba(20,20,20,0.95); border-top: 1px solid var(--error); }
 
-        .kb-row { display: flex; justify-content: center; width: 100%; margin-bottom: 6px; gap: 5px; }
-        
+        .kb-row { display: flex; justify-content: center; margin-bottom: 6px; gap: 5px; }
         .key {
-            flex: 1; height: 46px; max-width: 50px;
-            background: #fff; border-radius: 8px;
-            border-bottom: 3px solid #b2bec3;
+            flex: 1; height: 48px; max-width: 50px;
+            background: #fff; border-radius: 10px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 20px; font-weight: 700; color: #2d3436;
-            cursor: pointer; user-select: none;
-            transition: transform 0.05s, background 0.1s;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            font-size: 18px; font-weight: 700; color: #2d3436;
+            box-shadow: 0 4px 0 #b2bec3; cursor: pointer;
+            transition: all 0.1s;
         }
-        .key:active { transform: translateY(3px); border-bottom-width: 0; background: #f5f6fa; }
-        .key:hover { background: #f7f1e3; }
+        .key:active { transform: translateY(4px); box-shadow: none; }
+        
+        /* 特殊键位颜色 */
+        .key.chem { background: #e3f2fd; color: #0984e3; box-shadow: 0 4px 0 #74b9ff; font-size: 16px; }
+        .key.enter { flex: 2; max-width: 100px; background: var(--success); color: white; box-shadow: 0 4px 0 #009476; }
+        .key.del { background: var(--error); color: white; box-shadow: 0 4px 0 #c0392b; }
+        .key.shift { background: #ffeaa7; color: #d35400; box-shadow: 0 4px 0 #fdcb6e; }
+        .key.shift.active { background: #fdcb6e; color: white; transform: translateY(2px); box-shadow: 0 2px 0 #e1b12c; }
 
-        /* 功能键配色 */
-        .key.chem { background: #e3f2fd; color: #0984e3; border-bottom-color: #74b9ff; font-size: 16px; } /* 化学符号 */
-        .key.num { font-family: monospace; }
-        .key.action { flex: 1.5; max-width: 70px; font-size: 16px; }
-        .key.enter { flex: 2; max-width: 100px; background: var(--success); color: white; border-bottom-color: #009476; box-shadow: 0 4px 10px rgba(0,184,148,0.3); }
-        .key.del { background: #fab1a0; color: white; border-bottom-color: #e17055; }
-        .key.shift { background: #ffeaa7; color: #d35400; border-bottom-color: #fdcb6e; }
-        .key.shift.active { background: #fdcb6e; color: white; transform: translateY(1px); border-bottom-width: 2px; }
+        /* 粒子特效层 */
+        #vfx-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 99; overflow: hidden; }
+        .particle { position: absolute; border-radius: 50%; animation: explode 0.6s forwards; }
+        @keyframes explode { 0% { transform: scale(1); opacity: 1; } 100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; } }
 
-        /* ==========================================================================
-           4. 特效与反馈弹窗
-           ========================================================================== */
-        /* 全屏震动 */
-        .screen-shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
-        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
-
-        /* 粒子爆炸层 */
-        .vfx-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50; overflow: hidden; }
-        .particle { position: absolute; pointer-events: none; animation: boom 0.6s ease-out forwards; }
-        @keyframes boom { 0% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0); } }
-
-        /* 警告层 (Boss) */
-        .warning-overlay {
-            position: fixed; inset: 0; background: rgba(100,0,0,0.4); z-index: 80;
-            display: flex; align-items: center; justify-content: center; flex-direction: column;
-            pointer-events: none; opacity: 0; transition: opacity 0.5s;
-        }
-        .warning-overlay.active { opacity: 1; animation: flashRed 1s infinite; }
-        @keyframes flashRed { 0%, 100% { background: rgba(100,0,0,0.2); } 50% { background: rgba(100,0,0,0.5); } }
-
-        /* 菜单/反馈模态框 */
+        /* 模态框 (只在失败或通关显示，关卡间不显示) */
         .modal {
             position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 200;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            opacity: 0; pointer-events: none; transition: opacity 0.3s; backdrop-filter: blur(5px);
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
         }
         .modal.visible { opacity: 1; pointer-events: auto; }
-        .modal-content {
-            background: #fff; width: 85%; max-width: 400px; padding: 30px; border-radius: 24px;
-            text-align: center; animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        .modal-card { background: white; padding: 30px; border-radius: 20px; text-align: center; width: 80%; max-width: 300px; }
+        .btn-restart { 
+            background: var(--primary); color: white; padding: 10px 30px; 
+            border: none; border-radius: 50px; font-size: 18px; margin-top: 20px; cursor: pointer; 
         }
-        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-        /* 错题本样式 (PDF要求：清晰对比) */
-        .correction-box {
-            background: #fff5f5; border: 2px dashed #ff7675; border-radius: 12px;
-            padding: 15px; margin: 20px 0; text-align: left;
-        }
-        .correction-row { display: flex; justify-content: space-between; margin: 8px 0; align-items: center; }
-        .correction-label { font-size: 12px; color: #636e72; font-weight: bold; }
-        .correction-val { font-family: monospace; font-size: 20px; font-weight: bold; }
-        .wrong-val { color: var(--error); text-decoration: line-through; }
-        .right-val { color: var(--success); }
-
-        .btn-large {
-            width: 100%; padding: 15px; background: var(--primary); color: white;
-            border: none; border-radius: 12px; font-size: 18px; font-weight: bold;
-            cursor: pointer; box-shadow: 0 5px 0 var(--primary-dark);
-            transition: transform 0.1s;
-        }
-        .btn-large:active { transform: translateY(5px); box-shadow: none; }
-
-        /* 媒体查询适配 */
-        @media (max-height: 700px) {
-            .q-display { font-size: 36px; min-height: 50px; }
-            .key { height: 40px; font-size: 16px; }
-            .game-card { padding: 15px; }
-        }
     </style>
 </head>
 <body>
 
-    <div id="particles"></div>
-    <div class="vfx-layer" id="vfxLayer"></div>
-    <div class="warning-overlay" id="bossWarning">
-        <h1 style="color:red; font-size:60px; font-weight:900; letter-spacing:10px; text-shadow:0 0 20px yellow;">WARNING</h1>
-    </div>
+    <div id="vfx-layer"></div>
 
     <div class="hud-container">
         <div class="hud-box">
-            <div style="font-size:10px; opacity:0.6">LIFE</div>
-            <div class="lives" id="hudLives">❤❤❤❤❤</div>
+            <span style="font-size:10px; opacity:0.6">关卡</span>
+            <strong id="stage-name" style="font-size:14px">S1 元素</strong>
         </div>
-        <div class="hud-box" style="flex:1; margin:0 10px">
-            <div id="stageTitle" style="font-size:16px; margin-bottom:2px">S1: 元素觉醒</div>
-            <div class="bar-container" id="barBox">
-                <div class="bar-fill" id="progBar"></div>
-            </div>
-            <div style="font-size:10px; opacity:0.6; margin-top:2px" id="progText">0 / 8</div>
+        <div class="hud-box" style="flex:1; margin:0 10px;">
+            <span style="font-size:10px; opacity:0.6">任务进度</span>
+            <div class="bar-frame" style="width:100%"><div class="bar-fill" id="prog-bar"></div></div>
         </div>
         <div class="hud-box">
-            <div style="font-size:10px; opacity:0.6">SCORE</div>
-            <div style="color:var(--primary); font-size:20px" id="hudScore">0</div>
+            <span style="font-size:10px; opacity:0.6">生命值</span>
+            <div style="color:var(--error); letter-spacing:2px" id="lives-display">❤❤❤</div>
         </div>
     </div>
 
-    <div class="game-stage">
-        <div class="game-card" id="gameCard">
-            <div class="q-tag" id="qTag">题目类型</div>
-            <div class="q-display" id="qDisplay">
-                Loading...
-            </div>
+    <div class="arena">
+        <div class="q-card" id="card-body">
+            <div class="q-tag" id="q-tag">题目</div>
+            <div class="q-text" id="q-text">Ready?</div>
             
-            <div class="smart-hint" id="qHint">提示信息</div>
+            <div class="q-hint" id="q-hint">提示：注意大小写</div>
 
-            <div class="input-container" id="inputBox" onclick="Game.focus()">
-                <span id="inputText"></span><div class="cursor"></div>
+            <div class="input-box" id="input-slot">
+                <span id="input-val"></span><div class="cursor"></div>
             </div>
         </div>
     </div>
@@ -276,503 +183,299 @@
             <div class="key chem" onclick="KB.tap('⁻')">⁻</div>
             <div class="key chem" onclick="KB.tap('²')">²</div>
             <div class="key chem" onclick="KB.tap('³')">³</div>
-            <div class="key chem" onclick="KB.tap('(')">(</div>
-            <div class="key chem" onclick="KB.tap(')')">)</div>
+            <div class="key chem" onclick="KB.tap('(')">(</div> <div class="key chem" onclick="KB.tap(')')">)</div> </div>
+        <div class="kb-row">
+            <div class="key" onclick="KB.tap('Q')">Q</div><div class="key" onclick="KB.tap('W')">W</div>
+            <div class="key" onclick="KB.tap('E')">E</div><div class="key" onclick="KB.tap('R')">R</div>
+            <div class="key" onclick="KB.tap('T')">T</div><div class="key" onclick="KB.tap('Y')">Y</div>
+            <div class="key" onclick="KB.tap('U')">U</div><div class="key" onclick="KB.tap('I')">I</div>
+            <div class="key" onclick="KB.tap('O')">O</div><div class="key" onclick="KB.tap('P')">P</div>
         </div>
         <div class="kb-row">
-            <div class="key char" onclick="KB.tap('Q')">Q</div>
-            <div class="key char" onclick="KB.tap('W')">W</div>
-            <div class="key char" onclick="KB.tap('E')">E</div>
-            <div class="key char" onclick="KB.tap('R')">R</div>
-            <div class="key char" onclick="KB.tap('T')">T</div>
-            <div class="key char" onclick="KB.tap('Y')">Y</div>
-            <div class="key char" onclick="KB.tap('U')">U</div>
-            <div class="key char" onclick="KB.tap('I')">I</div>
-            <div class="key char" onclick="KB.tap('O')">O</div>
-            <div class="key char" onclick="KB.tap('P')">P</div>
+            <div class="key" onclick="KB.tap('A')">A</div><div class="key" onclick="KB.tap('S')">S</div>
+            <div class="key" onclick="KB.tap('D')">D</div><div class="key" onclick="KB.tap('F')">F</div>
+            <div class="key" onclick="KB.tap('G')">G</div><div class="key" onclick="KB.tap('H')">H</div>
+            <div class="key" onclick="KB.tap('J')">J</div><div class="key" onclick="KB.tap('K')">K</div>
+            <div class="key" onclick="KB.tap('L')">L</div>
         </div>
         <div class="kb-row">
-            <div class="key char" onclick="KB.tap('A')">A</div>
-            <div class="key char" onclick="KB.tap('S')">S</div>
-            <div class="key char" onclick="KB.tap('D')">D</div>
-            <div class="key char" onclick="KB.tap('F')">F</div>
-            <div class="key char" onclick="KB.tap('G')">G</div>
-            <div class="key char" onclick="KB.tap('H')">H</div>
-            <div class="key char" onclick="KB.tap('J')">J</div>
-            <div class="key char" onclick="KB.tap('K')">K</div>
-            <div class="key char" onclick="KB.tap('L')">L</div>
-        </div>
-        <div class="kb-row">
-            <div class="key shift" id="keyShift" onclick="KB.toggleShift()">⬆</div>
-            <div class="key char" onclick="KB.tap('Z')">Z</div>
-            <div class="key char" onclick="KB.tap('X')">X</div>
-            <div class="key char" onclick="KB.tap('C')">C</div>
-            <div class="key char" onclick="KB.tap('V')">V</div>
-            <div class="key char" onclick="KB.tap('B')">B</div>
-            <div class="key char" onclick="KB.tap('N')">N</div>
-            <div class="key char" onclick="KB.tap('M')">M</div>
+            <div class="key shift" id="btn-shift" onclick="KB.toggleShift()">⬆</div>
+            <div class="key" onclick="KB.tap('Z')">Z</div><div class="key" onclick="KB.tap('X')">X</div>
+            <div class="key" onclick="KB.tap('C')">C</div><div class="key" onclick="KB.tap('V')">V</div>
+            <div class="key" onclick="KB.tap('B')">B</div><div class="key" onclick="KB.tap('N')">N</div>
+            <div class="key" onclick="KB.tap('M')">M</div>
             <div class="key del" onclick="KB.del()">⌫</div>
         </div>
         <div class="kb-row">
-            <div class="key num" onclick="KB.tap('1')">1</div>
-            <div class="key num" onclick="KB.tap('2')">2</div>
-            <div class="key num" onclick="KB.tap('3')">3</div>
-            <div class="key num" onclick="KB.tap('4')">4</div>
-            <div class="key enter" onclick="Game.check()">发射 (Enter)</div>
+            <div class="key" onclick="KB.tap('1')">1</div><div class="key" onclick="KB.tap('2')">2</div>
+            <div class="key" onclick="KB.tap('3')">3</div><div class="key" onclick="KB.tap('4')">4</div>
+            <div class="key enter" onclick="Engine.check()">提交 (Enter)</div>
         </div>
     </div>
 
-    <div class="modal visible" id="mainModal">
-        <div class="modal-content">
-            <h1 style="color:var(--primary); font-size:36px; margin-bottom:10px" id="modalTitle">元素风暴</h1>
-            <p style="color:#636e72; margin-bottom:20px; line-height:1.5" id="modalDesc">
-                准备好迎接化学试尼了吗？<br>全键盘操控 · 沉浸式体验
-            </p>
-            
-            <div id="wrongArea" class="correction-box" style="display:none">
-                <div class="correction-row">
-                    <span class="correction-label">你的输入</span>
-                    <span class="correction-val wrong-val" id="userWrong"></span>
-                </div>
-                <div class="correction-row">
-                    <span class="correction-label">正确答案</span>
-                    <span class="correction-val right-val" id="realRight"></span>
-                </div>
-            </div>
-
-            <button class="btn-large" id="modalBtn" onclick="Game.startLevel(0)">开始挑战</button>
+    <div class="modal" id="modal">
+        <div class="modal-card">
+            <h2 id="modal-title" style="margin-bottom:10px; color:#2d3436;">闯关失败</h2>
+            <p id="modal-msg" style="color:#636e72;">再接再厉！</p>
+            <button class="btn-restart" onclick="Engine.restart()">重新开始</button>
         </div>
     </div>
 
 <script>
-/* ==========================================================================
-   1. 核心数据库 (The Brain) - 包含初中核心考点
-   ========================================================================== */
-const DB = [
-    // 难度1：单元素 (Group 1)
-    { n:"氢", s:"H", v:1, g:1 }, { n:"碳", s:"C", v:4, g:1 }, { n:"氮", s:"N", v:-3, g:1 },
-    { n:"氧", s:"O", v:-2, g:1 }, { n:"钠", s:"Na", v:1, g:1 }, { n:"镁", s:"Mg", v:2, g:1 },
-    { n:"铝", s:"Al", v:3, g:1 }, { n:"硅", s:"Si", v:4, g:1 }, { n:"磷", s:"P", v:-3, g:1 },
-    { n:"硫", s:"S", v:-2, g:1 }, { n:"氯", s:"Cl", v:-1, g:1 }, { n:"钾", s:"K", v:1, g:1 },
-    { n:"钙", s:"Ca", v:2, g:1 }, { n:"铁", s:"Fe", v:3, g:2 }, { n:"铜", s:"Cu", v:2, g:2 },
-    { n:"锌", s:"Zn", v:2, g:2 }, { n:"银", s:"Ag", v:1, g:2 }, { n:"钡", s:"Ba", v:2, g:2 },
-    
-    // 难度2：原子团 (Group 2)
-    { n:"氢氧根", s:"OH", v:-1, isG:true, g:2 }, { n:"硝酸根", s:"NO3", v:-1, isG:true, g:2 },
-    { n:"硫酸根", s:"SO4", v:-2, isG:true, g:2 }, { n:"碳酸根", s:"CO3", v:-2, isG:true, g:2 },
-    { n:"铵根", s:"NH4", v:1, isG:true, g:2 }
-];
+/* ================= 题库数据 (精简版) ================= */
+const DATA = {
+    // S1: 元素符号
+    elements: [
+        {q:"氢", a:"H"}, {q:"氦", a:"He"}, {q:"碳", a:"C"}, {q:"氮", a:"N"}, {q:"氧", a:"O"},
+        {q:"钠", a:"Na"}, {q:"镁", a:"Mg"}, {q:"铝", a:"Al"}, {q:"硅", a:"Si"}, {q:"磷", a:"P"},
+        {q:"硫", a:"S"}, {q:"氯", a:"Cl"}, {q:"钾", a:"K"}, {q:"钙", a:"Ca"}, {q:"铁", a:"Fe"},
+        {q:"铜", a:"Cu"}, {q:"锌", a:"Zn"}, {q:"银", a:"Ag"}
+    ],
+    // S2: 离子符号
+    ions: [
+        {q:"氢离子", a:"H⁺"}, {q:"钠离子", a:"Na⁺"}, {q:"镁离子", a:"Mg²⁺"}, {q:"铝离子", a:"Al³⁺"},
+        {q:"氯离子", a:"Cl⁻"}, {q:"氧离子", a:"O²⁻"}, {q:"硫离子", a:"S²⁻"}, {q:"氢氧根", a:"OH⁻"},
+        {q:"硝酸根", a:"NO3⁻"}, {q:"硫酸根", a:"SO4²⁻"}, {q:"碳酸根", a:"CO3²⁻"}, {q:"铵根", a:"NH4⁺"}
+    ],
+    // S3: 化学式 (加括号测试)
+    formulas: [
+        {q:"水", a:"H2O"}, {q:"二氧化碳", a:"CO2"}, {q:"氯化钠", a:"NaCl"}, {q:"氧化镁", a:"MgO"},
+        {q:"硫酸铜", a:"CuSO4"}, {q:"碳酸钙", a:"CaCO3"}, {q:"氢氧化钙", a:"Ca(OH)2"}, {q:"硫酸铝", a:"Al2(SO4)3"}
+    ]
+};
 
-/* ==========================================================================
-   2. 关卡配置 (The Flow) - 严格遵循PDF逻辑
-   ========================================================================== */
-const LEVELS = [
-    {
-        name: "S1: 元素符号", target: 8, hint: "大小写敏感 (如 Na)", 
-        gen: () => {
-            const d = rand(DB.filter(x => !x.isG)); // 不含原子团
-            return { tag: "写出符号", html: d.n, ans: d.s, type:'sym' };
-        }
-    },
-    {
-        name: "S2: 离子符号", target: 8, hint: "记得右上角电荷 (键盘第一排)", 
-        gen: () => {
-            const d = rand(DB);
-            let chg = "";
-            let v = Math.abs(d.v);
-            let sign = d.v > 0 ? "⁺" : "⁻";
-            if (v > 1) chg = (v==2 ? "²" : "³") + sign; else chg = sign;
-            return { tag: "离子符号", html: d.n + (d.isG?"":"离子"), ans: d.s + chg, type:'ion' };
-        }
-    },
-    {
-        name: "S3: 化合价", target: 8, hint: "正负号在前，数字在后",
-        gen: () => {
-            const d = rand(DB);
-            let sign = d.v > 0 ? "+" : "-";
-            return { tag: "标化合价", html: d.n, ans: sign + Math.abs(d.v), type:'val' };
-        }
-    },
-    {
-        name: "S4: 化学式", target: 8, hint: "注意角标 (输入数字自动变小)",
-        gen: () => {
-            const cat = rand(DB.filter(x=>x.v>0)); // 阳
-            const an = rand(DB.filter(x=>x.v<0));  // 阴
-            // 交叉法
-            let cV = Math.abs(cat.v), aV = Math.abs(an.v);
-            let lcm = (cV * aV) / gcd(cV, aV);
-            let cN = lcm / cV, aN = lcm / aV;
-            
-            // 组装答案：Na2CO3, (NH4)2SO4
-            let p1 = cat.s;
-            if(cN > 1) p1 = cat.isG ? `(${cat.s})${cN}` : `${cat.s}${cN}`;
-            
-            let p2 = an.s;
-            if(aN > 1) p2 = an.isG ? `(${an.s})${aN}` : `${an.s}${aN}`;
-            
-            return { 
-                tag: "化学式", 
-                html: `<span style="color:#0984e3">${cat.s}</span> + <span style="color:#d63031">${an.s}</span>`, 
-                ans: p1 + p2, type:'form' 
-            };
-        }
-    },
-    {
-        name: "BOSS: 混沌之主", target: 99, hp: 6, boss: true, hint: "全神贯注！混合攻击！",
-        gen: () => {
-            let r = Math.random();
-            if(r < 0.4) return LEVELS[1].gen(); // 离子
-            if(r < 0.7) return LEVELS[2].gen(); // 化合价
-            return LEVELS[3].gen(); // 化学式
-        }
-    }
-];
+/* ================= 游戏逻辑核心 ================= */
+const Engine = {
+    lvlIdx: 0,
+    qIdx: 0,
+    lives: 3,
+    currData: null,
+    bossHp: 0,
 
-function rand(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
-function gcd(a,b) { return b==0?a:gcd(b,a%b); }
+    // 关卡配置
+    levels: [
+        { name: "S1 元素觉醒", type: "el", target: 8, hint: "提示：注意大小写 (如 Na)" },
+        { name: "S2 离子风暴", type: "ion", target: 8, hint: "提示：记得右上角电荷 (键盘首行)" },
+        { name: "S3 物质构建", type: "form", target: 8, hint: "提示：原子团需加括号" },
+        { name: "BOSS 混沌试炼", type: "boss", target: 99, hp: 5, hint: "警告：全类型混合攻击！" }
+    ],
 
-/* ==========================================================================
-   3. 游戏引擎 (The Engine)
-   ========================================================================== */
-const Game = {
-    lvlIdx: 0, qIdx: 0, lives: 5, score: 0,
-    currQ: null, bossHp: 0,
-    
-    // 初始化
     init() {
-        this.createParticles();
-        // 绑定物理键盘
-        document.addEventListener('keydown', (e) => {
-            if(document.getElementById('mainModal').classList.contains('visible')) {
-                if(e.key === 'Enter') Game.modalAction();
-                return;
-            }
-            if(e.key === 'Backspace') KB.del();
-            else if(e.key === 'Enter') Game.check();
-            else if(e.key.length === 1) KB.tap(e.key);
-        });
+        this.lvlIdx = 0;
+        this.lives = 3;
+        this.startLevel();
     },
 
-    createParticles() {
-        const c = document.getElementById('particles');
-        for(let i=0; i<15; i++) {
-            let d = document.createElement('div');
-            d.className = 'bg-particle';
-            let size = Math.random()*20 + 10;
-            d.style.width = size+'px'; d.style.height = size+'px';
-            d.style.background = Math.random()>0.5 ? 'var(--primary)' : 'var(--accent)';
-            d.style.left = Math.random()*100 + '%';
-            d.style.animationDuration = (Math.random()*10 + 5) + 's';
-            c.appendChild(d);
-        }
-    },
-
-    // 关卡控制
-    startLevel(idx) {
-        // PDF要求：无缝衔接，无弹窗 (除第一关和失败外)
-        document.getElementById('mainModal').classList.remove('visible');
-        if(idx !== undefined) this.lvlIdx = idx;
-        
-        const lvl = LEVELS[this.lvlIdx];
+    // PDF P1 核心：这里不再弹窗，直接开始
+    startLevel() {
+        const config = this.levels[this.lvlIdx];
         this.qIdx = 0;
-        if(this.lvlIdx === 0) { this.lives = 5; this.score = 0; }
         
-        // BOSS 模式切换
-        if(lvl.boss) {
-            document.body.classList.add('boss-mode');
-            document.getElementById('bossWarning').classList.add('active');
-            setTimeout(() => document.getElementById('bossWarning').classList.remove('active'), 2000);
-            this.bossHp = lvl.hp;
-            document.getElementById('barBox').classList.add('boss-hp');
-        } else {
-            document.body.classList.remove('boss-mode');
-            document.getElementById('barBox').classList.remove('boss-hp');
-        }
-        
+        // 视觉状态切换
+        document.body.className = (config.type === 'boss') ? 'boss-mode' : '';
+        if(config.type === 'boss') this.bossHp = config.hp;
+
+        // UI更新
+        document.getElementById('stage-name').innerText = config.name;
         this.updateHUD();
-        this.nextQuestion();
+        this.nextQ();
     },
 
-    nextQuestion() {
-        const lvl = LEVELS[this.lvlIdx];
+    nextQ() {
+        const config = this.levels[this.lvlIdx];
         
-        // 胜利检测
-        let isWin = lvl.boss ? (this.bossHp <= 0) : (this.qIdx >= lvl.target);
-        if(isWin) {
-            if(this.lvlIdx < LEVELS.length - 1) {
-                // 直接进入下一关 (无弹窗)
+        // 判断过关
+        let isDone = false;
+        if(config.type === 'boss') isDone = (this.bossHp <= 0);
+        else isDone = (this.qIdx >= config.target);
+
+        if(isDone) {
+            if(this.lvlIdx < this.levels.length - 1) {
+                // PDF P1 核心：直接无缝进下一关
                 this.lvlIdx++;
-                AudioSys.play('win');
-                this.startLevel();
+                this.startLevel(); 
             } else {
-                this.showModal("🎉 传说达成", "你已征服所有元素！", "再来一局", false);
-                this.lvlIdx = 0;
+                this.gameOver(true); // 通关
             }
             return;
         }
 
-        this.currQ = lvl.gen();
-        KB.reset();
-        
-        // UI 更新
-        document.getElementById('qTag').innerText = this.currQ.tag;
-        document.getElementById('qDisplay').innerHTML = this.currQ.html;
-        document.getElementById('inputText').innerText = "";
-        
-        // *** 核心逻辑 (PDF P2)：Hint只在第1题显示 ***
-        const hintEl = document.getElementById('qHint');
-        if(this.qIdx === 0) {
-            hintEl.innerText = lvl.hint;
-            hintEl.classList.remove('hint-hidden');
-        } else {
-            hintEl.classList.add('hint-hidden');
+        // 生成题目
+        let pool = [];
+        if(config.type === 'el') pool = DATA.elements;
+        else if(config.type === 'ion') pool = DATA.ions;
+        else if(config.type === 'form') pool = DATA.formulas;
+        else { // Boss混合
+            pool = [...DATA.elements, ...DATA.ions, ...DATA.formulas];
         }
         
-        // 动画重置
-        const card = document.getElementById('gameCard');
-        card.style.animation = 'none';
-        void card.offsetWidth;
-        card.style.animation = 'cardFloat 6s ease-in-out infinite';
+        const item = pool[Math.floor(Math.random() * pool.length)];
+        this.currData = item;
+
+        // 渲染题目
+        document.getElementById('q-tag').innerText = (config.type==='boss'?'BOSS':'当前') + "题目";
+        document.getElementById('q-text').innerText = item.q;
+        document.getElementById('input-val').innerText = "";
+        KB.isShift = true; KB.render();
+
+        // === PDF P2 核心逻辑：Hint 仅在第1题 (qIdx=0) 显示 ===
+        const hintEl = document.getElementById('q-hint');
+        if(this.qIdx === 0) {
+            hintEl.innerText = config.hint;
+            hintEl.style.opacity = 1;
+        } else {
+            hintEl.style.opacity = 0; // 隐形但占位，防止界面跳动
+        }
+
+        this.updateHUD();
     },
 
     check() {
-        const input = document.getElementById('inputText').innerText;
+        const input = document.getElementById('input-val').innerText;
         if(!input) return;
 
-        if(input === this.currQ.ans) {
-            // 正确
-            AudioSys.play('correct');
-            this.visualEffect(true);
-            this.score += 10 + (this.lvlIdx * 5);
+        if(input === this.currData.a) {
+            // 正确：3A特效 (粒子 + 音效模拟)
+            this.spawnParticles(true);
+            const config = this.levels[this.lvlIdx];
             
-            if(LEVELS[this.lvlIdx].boss) this.bossHp--;
+            if(config.type === 'boss') this.bossHp--;
             else this.qIdx++;
-            
-            this.updateHUD();
-            setTimeout(() => this.nextQuestion(), 600); // 留时间看特效
+
+            setTimeout(() => this.nextQ(), 500);
         } else {
-            // 错误
-            AudioSys.play('error');
-            this.visualEffect(false);
+            // 错误：3A特效 (震动 + 红粒子)
+            this.spawnParticles(false);
+            document.body.classList.remove('shake-screen');
+            void document.body.offsetWidth; // 触发重绘
+            document.body.classList.add('shake-screen');
+
             this.lives--;
             this.updateHUD();
-            
-            if(this.lives <= 0) {
-                this.showModal("💔 系统崩溃", "核心能量耗尽...", "重新开始", true, input, this.currQ.ans);
-            }
+            if(this.lives <= 0) this.gameOver(false);
         }
-    },
-
-    visualEffect(isCorrect) {
-        // 1. 屏幕震动
-        document.body.classList.remove('shake');
-        void document.body.offsetWidth;
-        document.body.classList.add('shake');
-        
-        // 2. 粒子爆炸
-        const box = document.getElementById('inputBox');
-        const rect = box.getBoundingClientRect();
-        const color = isCorrect ? '#00b894' : '#d63031';
-        
-        for(let i=0; i<20; i++) {
-            let p = document.createElement('div');
-            p.className = 'particle';
-            p.style.backgroundColor = color;
-            let size = Math.random()*8+4;
-            p.style.width = size+'px'; p.style.height = size+'px';
-            p.style.left = (rect.left + rect.width/2) + 'px';
-            p.style.top = (rect.top + rect.height/2) + 'px';
-            
-            let angle = Math.random() * Math.PI * 2;
-            let dist = Math.random() * 100 + 50;
-            p.style.setProperty('--tx', Math.cos(angle)*dist + 'px');
-            p.style.setProperty('--ty', Math.sin(angle)*dist + 'px');
-            
-            document.getElementById('vfxLayer').appendChild(p);
-            setTimeout(() => p.remove(), 600);
-        }
-        
-        // 3. 输入框反馈
-        box.classList.add(isCorrect ? 'active' : 'error');
-        setTimeout(() => box.classList.remove('active', 'error'), 300);
     },
 
     updateHUD() {
-        const lvl = LEVELS[this.lvlIdx];
-        document.getElementById('stageTitle').innerText = lvl.name;
-        document.getElementById('hudLives').innerText = "❤".repeat(this.lives);
-        document.getElementById('hudScore').innerText = this.score;
+        const config = this.levels[this.lvlIdx];
+        // 生命值
+        document.getElementById('lives-display').innerText = "❤".repeat(this.lives);
         
-        let pct = 0;
-        if(lvl.boss) {
-            pct = (this.bossHp / lvl.hp) * 100;
-            document.getElementById('progressText').innerText = `BOSS HP: ${this.bossHp}`;
+        // 进度条
+        const bar = document.getElementById('prog-bar');
+        if(config.type === 'boss') {
+            const pct = (this.bossHp / config.hp) * 100;
+            bar.style.width = pct + "%";
+            bar.style.background = "#eb4d4b"; // Boss血条红
         } else {
-            pct = (this.qIdx / lvl.target) * 100;
-            document.getElementById('progressText').innerText = `${this.qIdx} / ${lvl.target}`;
+            const pct = (this.qIdx / config.target) * 100;
+            bar.style.width = pct + "%";
+            bar.style.background = "#4834d4";
         }
-        document.getElementById('progBar').style.width = pct + "%";
     },
 
-    showModal(title, desc, btn, isError, wrong, right) {
-        const m = document.getElementById('mainModal');
-        document.getElementById('modalTitle').innerText = title;
-        document.getElementById('modalDesc').innerHTML = desc;
-        document.getElementById('modalBtn').innerText = btn;
+    gameOver(win) {
+        const m = document.getElementById('modal');
+        const title = document.getElementById('modal-title');
+        const msg = document.getElementById('modal-msg');
         
-        const errArea = document.getElementById('wrongArea');
-        if(isError) {
-            errArea.style.display = 'block';
-            document.getElementById('userWrong').innerText = wrong;
-            document.getElementById('realRight').innerText = right;
-            document.getElementById('modalBtn').setAttribute('onclick', 'Game.startLevel(0)');
-        } else {
-            errArea.style.display = 'none';
-            document.getElementById('modalBtn').setAttribute('onclick', 'Game.startLevel(0)');
-        }
         m.classList.add('visible');
+        if(win) {
+            title.innerText = "传说达成！";
+            title.style.color = "#00b894";
+            msg.innerText = "你已征服所有元素！";
+        } else {
+            title.innerText = "任务失败";
+            title.style.color = "#d63031";
+            msg.innerText = `正确答案是：${this.currData.a}`;
+        }
     },
-    
-    modalAction() {
-        const btn = document.getElementById('modalBtn');
-        btn.click();
+
+    restart() {
+        document.getElementById('modal').classList.remove('visible');
+        this.init();
     },
-    
-    focus() {
-        // 只是为了视觉效果，不需要真聚焦
-        document.getElementById('inputBox').classList.add('active');
-        setTimeout(()=>document.getElementById('inputBox').classList.remove('active'), 200);
+
+    spawnParticles(success) {
+        const rect = document.getElementById('input-slot').getBoundingClientRect();
+        const color = success ? '#00b894' : '#d63031';
+        const container = document.getElementById('vfx-layer');
+        
+        for(let i=0; i<20; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            p.style.backgroundColor = color;
+            p.style.width = (Math.random()*8+4) + 'px';
+            p.style.height = p.style.width;
+            
+            // 初始位置
+            p.style.left = (rect.left + rect.width/2) + 'px';
+            p.style.top = (rect.top + rect.height/2) + 'px';
+            
+            // 爆炸方向
+            const angle = Math.random() * Math.PI * 2;
+            const dist = Math.random() * 100 + 50;
+            p.style.setProperty('--tx', Math.cos(angle)*dist + 'px');
+            p.style.setProperty('--ty', Math.sin(angle)*dist + 'px');
+            
+            container.appendChild(p);
+            setTimeout(() => p.remove(), 600);
+        }
     }
 };
 
-/* ==========================================================================
-   4. 战术键盘系统 (Smart Keyboard)
-   ========================================================================== */
+/* ================= 键盘控制 ================= */
 const KB = {
     isShift: true,
-    
     tap(char) {
-        // 播放按键音
-        AudioSys.play('key');
-        
         let c = char;
-        // 智能处理字母大小写
+        // 字母大小写处理
         if(/[a-z]/i.test(c) && c.length === 1) {
             c = this.isShift ? c.toUpperCase() : c.toLowerCase();
-            if(this.isShift) this.toggleShift(); // 首字母大写后自动切小写
+            if(this.isShift) this.toggleShift(); // 首字母大写后自动切回小写
         }
         
-        // 智能处理数字 -> 下标 (针对化学式)
-        // 逻辑：如果前一个字符是字母或括号，输入的数字自动变下标
-        // 如果前一个字符是符号(如+, ^)，数字保持原样
-        // 为了简单且符合直觉，我们规定：键盘上的数字键 1-9 直接出数字，
-        // 判定时，题目如果需要下标，会自动兼容（见Game.check逻辑或直接这里转）
-        // *修正*：为了所见即所得，这里做简单映射，如果需要化学式数字，一般是下标
-        // 除非是在写系数。这里简化：数字键直接出普通数字，但在判定化学式时兼容。
-        // 或者：直接转下标? 
-        // 考虑到用户体验，这里不做强制转换，因为键盘第一排有²³，且化学式输入时用户习惯按数字。
-        // 我们让显示层显示数字，判定层做模糊匹配？不，教育要严谨。
-        // -> 我们让数字键直接输出普通数字。对于化学式 H2O，我们允许写 H2O，
-        // -> 并在 check() 中把 H2O 视为 H₂O 的正确答案？
-        // -> 不，PDF里要求严谨。
-        // -> 方案：Input显示区应用 CSS font-feature-settings? 不行。
-        // -> 最终方案：输入框内，如果输入的是数字，直接替换为下标字符（除非前面是电荷位）。
-        // 为防复杂，我们让普通数字键就输出普通数字。
-        // 判定逻辑里：Game.currQ.type === 'form' 时，允许普通数字替代下标算对。
-        
-        const box = document.getElementById('inputText');
-        // 简单的逻辑：化学式题型中，输入普通数字直接转下标显示
-        if(Game.currQ && Game.currQ.type === 'form' && /[0-9]/.test(c)) {
-            const map = "₀₁₂₃₄₅₆₇₈₉";
-            c = map[parseInt(c)];
-        }
-        
+        const box = document.getElementById('input-val');
         box.innerText += c;
+        
+        // 简单的输入反馈
+        const slot = document.getElementById('input-slot');
+        slot.classList.add('active');
+        setTimeout(() => slot.classList.remove('active'), 100);
     },
-    
     del() {
-        AudioSys.play('key');
-        const box = document.getElementById('inputText');
+        const box = document.getElementById('input-val');
         box.innerText = box.innerText.slice(0, -1);
         if(box.innerText.length === 0) {
             this.isShift = true; this.render();
         }
     },
-    
     toggleShift() {
         this.isShift = !this.isShift;
         this.render();
     },
-    
-    reset() {
-        this.isShift = true;
-        this.render();
-    },
-    
     render() {
-        const btn = document.getElementById('keyShift');
+        const btn = document.getElementById('btn-shift');
         if(this.isShift) btn.classList.add('active'); else btn.classList.remove('active');
         
-        document.querySelectorAll('.key.char').forEach(k => {
-            const t = k.getAttribute('onclick').match(/'(.)'/)[1];
-            k.innerText = this.isShift ? t.toUpperCase() : t.toLowerCase();
+        document.querySelectorAll('.key').forEach(k => {
+            const txt = k.innerText;
+            if(txt.length === 1 && /[a-z]/i.test(txt)) {
+                k.innerText = this.isShift ? txt.toUpperCase() : txt.toLowerCase();
+            }
         });
     }
 };
 
-/* ==========================================================================
-   5. 音频系统 (纯代码生成，无需素材)
-   ========================================================================== */
-const AudioSys = {
-    ctx: null,
-    init() {
-        if(!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-    },
-    play(type) {
-        if(!this.ctx) this.init();
-        const osc = this.ctx.createOscillator();
-        const g = this.ctx.createGain();
-        osc.connect(g); g.connect(this.ctx.destination);
-        
-        const now = this.ctx.currentTime;
-        if(type === 'correct') {
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(600, now);
-            osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
-            g.gain.setValueAtTime(0.1, now);
-            g.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-            osc.start(now); osc.stop(now + 0.3);
-        } else if(type === 'error') {
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(150, now);
-            osc.frequency.linearRampToValueAtTime(50, now + 0.3);
-            g.gain.setValueAtTime(0.2, now);
-            g.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-            osc.start(now); osc.stop(now + 0.3);
-        } else if(type === 'win') {
-            osc.type = 'triangle';
-            // 简单的琶音
-            [440, 554, 659, 880].forEach((f, i) => {
-                const o = this.ctx.createOscillator();
-                const gn = this.ctx.createGain();
-                o.connect(gn); gn.connect(this.ctx.destination);
-                o.frequency.value = f;
-                gn.gain.setValueAtTime(0.05, now + i*0.1);
-                gn.gain.exponentialRampToValueAtTime(0.001, now + i*0.1 + 0.3);
-                o.start(now + i*0.1); o.stop(now + i*0.1 + 0.3);
-            });
-        } else { // key click
-            osc.type = 'square';
-            osc.frequency.setValueAtTime(800, now);
-            g.gain.setValueAtTime(0.02, now);
-            g.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
-            osc.start(now); osc.stop(now + 0.05);
-        }
-    }
-};
+// 物理键盘支持
+document.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter') Engine.check();
+    else if(e.key === 'Backspace') KB.del();
+    else if(e.key.length === 1) KB.tap(e.key);
+});
 
 // 启动
-Game.init();
+Engine.init();
 
 </script>
 </body>
