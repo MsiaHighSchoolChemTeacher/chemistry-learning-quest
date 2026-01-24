@@ -36,10 +36,13 @@
             100% { transform: translate(0, 0) rotate(360deg); }
         }
 
-        /* HUD 仪表盘 */
+        /* HUD 仪表盘 - 布局修正 (Fix 3: 使用Grid确保左中右绝对定位) */
         .hud-container {
             position: fixed; top: 0; left: 0; right: 0;
-            padding: 15px; display: flex; justify-content: space-between; align-items: flex-start;
+            padding: 15px; 
+            display: grid; 
+            grid-template-columns: 1fr auto 1fr; /* 左侧占满剩余，中间自适应，右侧占满剩余 */
+            align-items: start;
             z-index: 10; pointer-events: none;
         }
         .hud-box {
@@ -48,6 +51,11 @@
             display: flex; flex-direction: column; align-items: center;
             backdrop-filter: blur(5px); transition: transform 0.2s;
         }
+        /* 强制对齐修正 */
+        .hud-container > .hud-box:nth-child(1) { justify-self: start; }  /* 生命值靠左 */
+        .hud-container > .hud-box:nth-child(2) { justify-self: center; } /* 关卡居中 */
+        .hud-container > .hud-box:nth-child(3) { justify-self: end; }    /* 连击靠右 */
+
         .score-val { color: var(--primary); font-size: 20px; }
         .combo-val { color: var(--warn); font-size: 24px; font-style: italic; }
         .lives { font-size: 24px; letter-spacing: 2px; }
@@ -192,7 +200,6 @@
 </head>
 <body>
 
-    <!-- 背景分子动画 -->
     <div id="molecules"></div>
 
     <div class="timer-bar-bg"><div class="timer-bar-fill" id="timerBar"></div></div>
@@ -224,7 +231,6 @@
                 <div class="anti-trap-warning hidden" id="antiTrapWarning">不用带电荷</div>
             </div>
             
-            <!-- 快捷输入栏 -->
             <div class="quick-input">
                 <div class="quick-btn" data-value="()">()</div>
                 <div class="quick-btn" data-value="²">²</div>
@@ -268,7 +274,6 @@
         </div>
     </div>
 
-    <!-- 激光特效 -->
     <div class="laser-effect" id="laserEffect"></div>
 
 <script>
@@ -365,7 +370,17 @@ const Utils = {
     // 将上标数字转换为普通数字
     superscriptToNormal: str => String(str).replace(/[⁺⁻⁰¹²³⁴⁵⁶⁷⁸⁹]/g, m => '0123456789'['⁺⁻₀₁₂₃₄₅₆₇₈₉'.indexOf(m)]),
     // 将普通数字转换为上标数字
-    normalToSuperscript: str => String(str).replace(/\d/g, m => '₀₁₂₃₄₅₆₇₈₉'['0123456789'.indexOf(m)])
+    normalToSuperscript: str => String(str).replace(/\d/g, m => '₀₁₂₃₄₅₆₇₈₉'['0123456789'.indexOf(m)]),
+    
+    // Fix 2: 强大的归一化工具，将所有Unicode上标下标转为ASCII，解决输入误判
+    normalizeInput: str => {
+        return String(str)
+            .replace(/[₀₁₂₃₄₅₆₇₈₉]/g, c => '0123456789'['₀₁₂₃₄₅₆₇₈₉'.indexOf(c)])
+            .replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]/g, c => '0123456789'['⁰¹²³⁴⁵⁶⁷⁸⁹'.indexOf(c)])
+            .replace(/[⁺]/g, '+')
+            .replace(/[⁻]/g, '-')
+            .trim();
+    }
 };
 
 const Sound = {
@@ -423,6 +438,10 @@ const Game = {
         this.combo = 0;
         this.history = [];
         this.isFirstQuestion = true;
+        
+        // Fix 1: 游戏开始时提醒输入规则
+        alert("重要输入规则：\n英文字母必须使用实体键盘输入；\n括号、数字和正负号必须使用虚拟键盘输入！");
+
         this.showStageMenu();
     },
 
@@ -499,14 +518,8 @@ const Game = {
                 const chargeSign = item.val > 0 ? '+' : '-';
                 const standardCharge = (chargeNum === 1 ? '' : chargeNum) + chargeSign;
                 
-                // 支持多种输入格式
+                // q.ans 保持标准ASCII格式，例如 "Na+" 或 "SO42-"
                 q.ans = item.sym + standardCharge;
-                q.possibleAnswers = [
-                    item.sym + standardCharge,              // Na+
-                    item.sym + "^" + standardCharge,       // Na^+
-                    item.sym + standardCharge,             // Na⁺
-                    item.sym + Utils.normalToSuperscript(chargeNum.toString()) + (item.val > 0 ? '⁺' : '⁻')  // Na⁺ (上标)
-                ];
                 
                 signature = "sym_" + item.disp;
             }
@@ -593,44 +606,23 @@ const Game = {
             correct = normUser === q.ans;
         }
         else if (q.type === 'ionSymbol') {
-            // 对于离子符号，检查多种可能的答案格式
-            const item = q.data;
-            const userVal = userValRaw;
+            // Fix 2: 离子符号判定逻辑修正
+            // 对用户输入和标准答案都进行归一化（将上标下标转为普通ASCII），然后比对
+            // 这样 "NO3-" (纯键盘) 和 "NO₃⁻" (混合输入) 都会转为 "NO3-"，从而判对
+            const normUser = Utils.normalizeInput(userValRaw);
+            const normAns = Utils.normalizeInput(q.ans);
             
-            // 标准格式
-            const chargeNum = Math.abs(item.val);
-            const chargeSign = item.val > 0 ? '+' : '-';
-            const standardCharge = (chargeNum === 1 ? '' : chargeNum) + chargeSign;
-            
-            // 可能的正确答案
-            const possibleAnswers = [
-                item.sym + standardCharge,              // Na+
-                item.sym + "^" + standardCharge,       // Na^+
-                item.sym + standardCharge,             // Na⁺ (如果用户输入了上标)
-                item.sym + Utils.normalToSuperscript(chargeNum.toString()) + (item.val > 0 ? '⁺' : '⁻')  // Na⁺ (上标)
-            ];
-            
-            // 尝试规范化用户输入进行比较
-            let normUser = userVal;
-            // 将上标转换为标准格式
-            normUser = normUser.replace(/[⁺]/g, '+').replace(/[⁻]/g, '-');
-            normUser = Utils.superscriptToNormal(normUser);
-            
-            // 检查标准化后的输入
-            correct = possibleAnswers.includes(userVal) || possibleAnswers.includes(normUser) ||
-                      possibleAnswers.some(ans => {
-                          // 检查是否包含了正确的符号（支持用户使用上标数字）
-                          const cleanUser = normUser.replace(/[⁺⁻]/g, m => m === '⁺' ? '+' : '-');
-                          const cleanAns = ans.replace(/[⁺⁻]/g, m => m === '⁺' ? '+' : '-');
-                          return cleanUser === cleanAns;
-                      });
+            // 严格检查：归一化后的字符串必须完全一致（这就保证了Mg2+不会匹配Mg+2）
+            correct = normUser === normAns;
         }
         else if (q.type === 'valence') {
             correct = userValRaw.replace(/\s/g,'') === q.ans;
         }
         else if (q.type === 'formula') {
-            const normUser = userValRaw.replace(/[₀-₉]/g, m => '0123456789'['₀₁₂₃₄₅₆₇₈₉'.indexOf(m)]);
-            correct = normUser === q.ans; 
+            // Formula 也应用归一化，以支持用户使用虚拟键盘输入的下标
+            const normUser = Utils.normalizeInput(userValRaw);
+            const normAns = Utils.normalizeInput(q.ans);
+            correct = normUser === normAns; 
         }
 
         if (correct) {
@@ -892,6 +884,3 @@ Game.start();
 </script>
 </body>
 </html>
-
-
-
