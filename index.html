@@ -156,18 +156,6 @@
             background: #e8f5e9; padding: 10px; border-radius: 8px; color: #2e7d32; font-weight: bold;
         }
 
-        /* Emoji雨动画 */
-        .emoji-rain {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100;
-            overflow: hidden;
-        }
-        .emoji-drop {
-            position: absolute; font-size: 24px; animation: fall linear forwards;
-        }
-        @keyframes fall {
-            to { transform: translateY(100vh); opacity: 0; }
-        }
-
         /* 激光特效 */
         .laser-effect {
             position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none;
@@ -181,12 +169,6 @@
         @keyframes laserBlast {
             0% { opacity: 0.8; transform: scale(0.5); }
             100% { opacity: 0; transform: scale(1.5); }
-        }
-
-        /* 粒子特效 */
-        .particle {
-            position: absolute; width: 6px; height: 6px; border-radius: 50%; pointer-events: none;
-            z-index: 100;
         }
 
         /* 动画类 */
@@ -263,6 +245,8 @@
                 <div class="quick-btn" data-value="₇">₇</div>
                 <div class="quick-btn" data-value="₈">₈</div>
                 <div class="quick-btn" data-value="₉">₉</div>
+                <div class="quick-btn" data-value="⁺">⁺</div>
+                <div class="quick-btn" data-value="⁻">⁻</div>
             </div>
             
             <button class="btn-main" onclick="Game.check()">提交 (Enter)</button>
@@ -271,7 +255,7 @@
 
         <div id="menuArea" class="hidden">
             <h1 style="color:var(--primary); margin-bottom:10px;" id="menuTitle">元素风暴</h1>
-            <p style="color:#636e72; margin-bottom:20px;" id="menuDesc">准备好挑战化学极限了吗？</p>
+            <p style="color:#636e72; margin-bottom:20px;" id="menuDesc">准备好挑战化学极限了吗？<br>英文字母使用键盘输入，括号、数字和正负号必须使用虚拟键盘输入！</p>
             <button class="btn-main" onclick="Game.nextStage()">开始挑战</button>
         </div>
 
@@ -286,9 +270,6 @@
 
     <!-- 激光特效 -->
     <div class="laser-effect" id="laserEffect"></div>
-
-    <!-- Emoji雨容器 -->
-    <div class="emoji-rain" id="emojiRain"></div>
 
 <script>
 /* ================= 核心数据库 (初中课本精准版) ================= */
@@ -380,7 +361,11 @@ const Utils = {
         const num = Math.abs(val);
         const sign = val > 0 ? '+' : '-';
         return (num === 1 ? '' : num) + sign;
-    }
+    },
+    // 将上标数字转换为普通数字
+    superscriptToNormal: str => String(str).replace(/[⁺⁻⁰¹²³⁴⁵⁶⁷⁸⁹]/g, m => '0123456789'['⁺⁻₀₁₂₃₄₅₆₇₈₉'.indexOf(m)]),
+    // 将普通数字转换为上标数字
+    normalToSuperscript: str => String(str).replace(/\d/g, m => '₀₁₂₃₄₅₆₇₈₉'['0123456789'.indexOf(m)])
 };
 
 const Sound = {
@@ -493,7 +478,7 @@ const Game = {
                 item = Utils.rand(pool);
                 q.type = 'elementSymbol';
                 q.tag = '写元素符号';
-                // 只显示中文名，如“钠”
+                // 只显示中文名，如"钠"
                 q.html = `<div class="ion-block" style="border:none; background:transparent; font-size:40px">${item.elementName || item.name}</div>`;
                 q.ans = item.sym; 
                 q.hint = this.isFirstQuestion ? "大小写敏感，如 Na (不要带电荷)" : ""; // 只在第一题显示完整提示
@@ -508,6 +493,21 @@ const Game = {
                 q.html = `<div class="ion-block" style="border:none; background:transparent; font-size:40px">${displayName}</div>`;
                 q.hint = this.isFirstQuestion ? "大小写敏感，如 Na+" : ""; // 只在第一题显示完整提示
                 q.data = item;
+                
+                // 计算正确答案（支持上标形式）
+                const chargeNum = Math.abs(item.val);
+                const chargeSign = item.val > 0 ? '+' : '-';
+                const standardCharge = (chargeNum === 1 ? '' : chargeNum) + chargeSign;
+                
+                // 支持多种输入格式
+                q.ans = item.sym + standardCharge;
+                q.possibleAnswers = [
+                    item.sym + standardCharge,              // Na+
+                    item.sym + "^" + standardCharge,       // Na^+
+                    item.sym + standardCharge,             // Na⁺
+                    item.sym + Utils.normalToSuperscript(chargeNum.toString()) + (item.val > 0 ? '⁺' : '⁻')  // Na⁺ (上标)
+                ];
+                
                 signature = "sym_" + item.disp;
             }
             else if (type === 'valence') {
@@ -593,16 +593,37 @@ const Game = {
             correct = normUser === q.ans;
         }
         else if (q.type === 'ionSymbol') {
+            // 对于离子符号，检查多种可能的答案格式
             const item = q.data;
+            const userVal = userValRaw;
+            
+            // 标准格式
             const chargeNum = Math.abs(item.val);
             const chargeSign = item.val > 0 ? '+' : '-';
             const standardCharge = (chargeNum === 1 ? '' : chargeNum) + chargeSign;
-            const possibleAns = [
-                item.sym + standardCharge,             
-                item.sym + "^" + standardCharge        
+            
+            // 可能的正确答案
+            const possibleAnswers = [
+                item.sym + standardCharge,              // Na+
+                item.sym + "^" + standardCharge,       // Na^+
+                item.sym + standardCharge,             // Na⁺ (如果用户输入了上标)
+                item.sym + Utils.normalToSuperscript(chargeNum.toString()) + (item.val > 0 ? '⁺' : '⁻')  // Na⁺ (上标)
             ];
-            const normUser = userValRaw.replace(/[₀-₉]/g, m => '0123456789'['₀₁₂₃₄₅₆₇₈₉'.indexOf(m)]);
-            correct = possibleAns.includes(normUser);
+            
+            // 尝试规范化用户输入进行比较
+            let normUser = userVal;
+            // 将上标转换为标准格式
+            normUser = normUser.replace(/[⁺]/g, '+').replace(/[⁻]/g, '-');
+            normUser = Utils.superscriptToNormal(normUser);
+            
+            // 检查标准化后的输入
+            correct = possibleAnswers.includes(userVal) || possibleAnswers.includes(normUser) ||
+                      possibleAnswers.some(ans => {
+                          // 检查是否包含了正确的符号（支持用户使用上标数字）
+                          const cleanUser = normUser.replace(/[⁺⁻]/g, m => m === '⁺' ? '+' : '-');
+                          const cleanAns = ans.replace(/[⁺⁻]/g, m => m === '⁺' ? '+' : '-');
+                          return cleanUser === cleanAns;
+                      });
         }
         else if (q.type === 'valence') {
             correct = userValRaw.replace(/\s/g,'') === q.ans;
@@ -632,13 +653,6 @@ const Game = {
         document.body.classList.add('screen-shake');
         setTimeout(() => document.body.classList.remove('screen-shake'), 500);
         
-        // 随机夸奖语句
-        const compliments = ["太强了！", "化学天才！", "完美！", "学霸！", "无敌！", "厉害了！", "牛人！", "神级操作！"];
-        const compliment = Utils.rand(compliments);
-        
-        // Emoji雨
-        UI.showEmojiRain(compliment);
-        
         UI.updateHUD();
         UI.animateSuccess();
         setTimeout(() => this.nextQuestion(), 1000); // 延长等待时间以便展示特效
@@ -651,7 +665,7 @@ const Game = {
         UI.updateHUD();
         
         let title = "回答错误";
-        let detail = `正确答案是：${this.currentQ.type === 'formula' ? Utils.toSub(this.currentQ.ans) : (this.currentQ.data.ionNames ? this.currentQ.data.ionNames[0] : this.currentQ.ans)}`;
+        let detail = `正确答案是：${this.currentQ.ans || (this.currentQ.data && (this.currentQ.data.ionNames ? this.currentQ.data.ionNames[0] : this.currentQ.data.sym)) || '未知'}`;
         
         // 针对不同题型优化报错
         if(this.currentQ.type === 'elementSymbol') {
@@ -662,7 +676,11 @@ const Game = {
         }
         else if(this.currentQ.type === 'ionSymbol') {
             const item = this.currentQ.data;
-            detail = `正确答案是：${Utils.toSub(item.disp)}`;
+            if(item) {
+                detail = `正确答案是：${Utils.toSub(item.disp)}`;
+            } else {
+                detail = `正确答案是：${this.currentQ.ans}`;
+            }
             if (!wrongAns.includes('+') && !wrongAns.includes('-')) {
                 detail += "<br>(离子符号记得写右上角的电荷！)";
             }
@@ -696,7 +714,7 @@ const Game = {
         }
 
         // 显示用户答案与正确答案对比
-        UI.showFeedbackWithComparison(title, detail, math, wrongAns, this.currentQ.ans);
+        UI.showFeedbackWithComparison(title, detail, math, wrongAns, this.currentQ.ans || (this.currentQ.data && this.currentQ.data.disp) || '未知');
     },
 
     tick() {
@@ -821,53 +839,6 @@ const UI = {
         laser.classList.remove('active');
         void laser.offsetWidth; // 强制重排
         laser.classList.add('active');
-    },
-    
-    showEmojiRain(message) {
-        const container = document.getElementById('emojiRain');
-        container.innerHTML = ''; // 清空之前的emoji
-        
-        // 添加夸奖文字
-        const messageEl = document.createElement('div');
-        messageEl.textContent = message;
-        messageEl.style.position = 'absolute';
-        messageEl.style.top = '20%';
-        messageEl.style.left = '50%';
-        messageEl.style.transform = 'translateX(-50%)';
-        messageEl.style.fontSize = '28px';
-        messageEl.style.fontWeight = 'bold';
-        messageEl.style.color = '#f0932b';
-        messageEl.style.zIndex = '101';
-        messageEl.style.animation = 'fall 2s linear forwards';
-        container.appendChild(messageEl);
-        
-        // 创建emoji雨
-        for (let i = 0; i < 20; i++) {
-            setTimeout(() => {
-                const emoji = document.createElement('div');
-                const emojis = ['⭐', '🌟', '✨', '🎉', '🏆', '🎯', '🔥', '🚀', '💎', '🏆'];
-                emoji.textContent = Utils.rand(emojis);
-                emoji.className = 'emoji-drop';
-                emoji.style.left = Math.random() * 100 + 'vw';
-                emoji.style.animationDuration = (Math.random() * 2 + 1) + 's';
-                emoji.style.fontSize = (Math.random() * 20 + 20) + 'px';
-                container.appendChild(emoji);
-                
-                // 移除完成后清理DOM
-                setTimeout(() => {
-                    if (emoji.parentNode) {
-                        emoji.parentNode.removeChild(emoji);
-                    }
-                }, 3000);
-            }, i * 100);
-        }
-        
-        // 清理消息
-        setTimeout(() => {
-            if (messageEl.parentNode) {
-                messageEl.parentNode.removeChild(messageEl);
-            }
-        }, 3000);
     }
 };
 
@@ -911,61 +882,6 @@ document.getElementById('inputAns').addEventListener('input', (e) => {
         warningEl.classList.add('hidden');
     }
 });
-
-// 键盘按键粒子特效
-document.getElementById('inputAns').addEventListener('keydown', (e) => {
-    // 创建粒子特效
-    createParticleEffect(e);
-});
-
-function createParticleEffect(event) {
-    const input = document.getElementById('inputAns');
-    const rect = input.getBoundingClientRect();
-    
-    for (let i = 0; i < 5; i++) {
-        const particle = document.createElement('div');
-        particle.className = 'particle';
-        particle.style.left = (rect.left + rect.width/2) + 'px';
-        particle.style.top = (rect.top + rect.height/2) + 'px';
-        
-        // 随机颜色
-        const colors = ['#4834d4', '#6ab04c', '#f0932b', '#eb4d4b', '#686de0'];
-        particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-        
-        document.body.appendChild(particle);
-        
-        // 设置随机运动轨迹
-        const angle = Math.random() * Math.PI * 2;
-        const speed = 2 + Math.random() * 3;
-        const vx = Math.cos(angle) * speed;
-        const vy = Math.sin(angle) * speed;
-        
-        let x = parseFloat(particle.style.left);
-        let y = parseFloat(particle.style.top);
-        
-        // 动画函数
-        const animate = () => {
-            x += vx;
-            y += vy;
-            particle.style.left = x + 'px';
-            particle.style.top = y + 'px';
-            
-            // 逐渐消失
-            const opacity = parseFloat(particle.style.opacity) || 1;
-            particle.style.opacity = opacity - 0.02;
-            
-            if (opacity > 0) {
-                requestAnimationFrame(animate);
-            } else {
-                if (particle.parentNode) {
-                    particle.parentNode.removeChild(particle);
-                }
-            }
-        };
-        
-        requestAnimationFrame(animate);
-    }
-}
 
 document.getElementById('inputAns').addEventListener('keyup', e => { if (e.key === 'Enter') Game.check(); });
 
