@@ -16,6 +16,24 @@
             background: var(--bg-gradient);
             min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
             overflow: hidden;
+            position: relative;
+        }
+
+        /* 背景分子动画 */
+        .molecule {
+            position: absolute;
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: rgba(72, 52, 212, 0.3);
+            animation: float 15s infinite linear;
+            z-index: -1;
+        }
+        @keyframes float {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(100px, 100px) rotate(90deg); }
+            50% { transform: translate(200px, 50px) rotate(180deg); }
+            75% { transform: translate(50px, 200px) rotate(270deg); }
+            100% { transform: translate(0, 0) rotate(360deg); }
         }
 
         /* HUD 仪表盘 */
@@ -32,8 +50,25 @@
         }
         .score-val { color: var(--primary); font-size: 20px; }
         .combo-val { color: var(--warn); font-size: 24px; font-style: italic; }
-        .lives { font-size: 20px; letter-spacing: 2px; }
+        .lives { font-size: 24px; letter-spacing: 2px; }
         .stage-badge { background: var(--primary); color: white; padding: 4px 12px; border-radius: 12px; font-size: 14px; margin-bottom: 5px; }
+
+        /* 濒死警示 */
+        .danger-flash {
+            animation: dangerFlash 0.5s infinite alternate;
+        }
+        @keyframes dangerFlash {
+            from { box-shadow: 0 0 0 0 rgba(235, 77, 75, 0.7); }
+            to { box-shadow: 0 0 20px 10px rgba(235, 77, 75, 0.7); }
+        }
+        
+        .heart-beat {
+            animation: heartBeat 0.5s infinite alternate;
+        }
+        @keyframes heartBeat {
+            from { transform: scale(1); }
+            to { transform: scale(1.2); }
+        }
 
         /* 进度条 (关卡进度) */
         .progress-bar-container {
@@ -43,9 +78,9 @@
             height: 100%; width: 0%; background: var(--success); transition: width 0.3s ease;
         }
 
-        /* 倒计时条 */
+        /* 倒计时条 - 彩虹进度条 */
         .timer-bar-bg {
-            position: fixed; top: 0; left: 0; width: 100%; height: 6px; background: #ddd; z-index: 20;
+            position: fixed; top: 0; left: 0; width: 100%; height: 10px; background: #ddd; z-index: 20;
         }
         .timer-bar-fill {
             height: 100%; width: 100%; background: linear-gradient(90deg, #6ab04c, #f0932b, #eb4d4b);
@@ -63,16 +98,16 @@
         }
 
         /* 题目显示区 */
-        .q-tag { display: inline-block; font-size: 14px; color: #fff; background: #b2bec3; padding: 4px 10px; border-radius: 6px; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
-        .q-display { font-size: 42px; font-weight: 800; color: #2c3e50; min-height: 80px; display: flex; align-items: center; justify-content: center; gap: 15px; margin: 10px 0 20px; }
-        .ion-block { padding: 10px 15px; background: #f1f2f6; border-radius: 12px; border: 2px solid #dfe6e9; box-shadow: 0 4px 0 #dfe6e9; position: relative; }
+        .q-tag { display: inline-block; font-size: 16px; color: #fff; background: #b2bec3; padding: 4px 10px; border-radius: 6px; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
+        .q-display { font-size: 48px; font-weight: 800; color: #2c3e50; min-height: 80px; display: flex; align-items: center; justify-content: center; gap: 15px; margin: 10px 0 20px; }
+        .ion-block { padding: 15px 20px; background: #f1f2f6; border-radius: 12px; border: 2px solid #dfe6e9; box-shadow: 0 4px 0 #dfe6e9; position: relative; font-size: 32px; }
         .ion-block::after { content: attr(data-charge); position: absolute; top: -10px; right: -10px; background: var(--warn); color: white; font-size: 12px; padding: 2px 6px; border-radius: 10px; opacity: 0; transform: scale(0); transition: all 0.3s; }
         .show-charge .ion-block::after { opacity: 1; transform: scale(1); }
 
         /* 输入区 */
         .input-area { position: relative; margin-top: 20px; }
         input {
-            width: 100%; padding: 15px; font-size: 24px; border: 3px solid #dfe6e9; border-radius: 15px;
+            width: 100%; padding: 20px; font-size: 28px; border: 3px solid #dfe6e9; border-radius: 15px;
             text-align: center; outline: none; background: #fcfcfc; color: #2d3436; font-weight: bold;
             transition: all 0.3s;
         }
@@ -85,6 +120,18 @@
         }
         .btn-main:active { transform: translateY(6px); box-shadow: 0 0 0 #30336b; }
 
+        /* 快捷输入栏 */
+        .quick-input {
+            display: flex; justify-content: center; gap: 8px; margin-top: 15px; flex-wrap: wrap;
+        }
+        .quick-btn {
+            padding: 8px 12px; background: #e0e0e0; border-radius: 8px; cursor: pointer; font-size: 18px;
+            transition: all 0.2s;
+        }
+        .quick-btn:hover {
+            background: #d0d0d0; transform: scale(1.1);
+        }
+
         /* 反馈与动画 */
         .feedback-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -94,15 +141,61 @@
         }
         .feedback-overlay.active { opacity: 1; pointer-events: auto; }
         .fb-icon { font-size: 60px; margin-bottom: 10px; display: block; }
-        .fb-title { font-size: 24px; font-weight: bold; margin-bottom: 10px; }
-        .fb-detail { font-size: 16px; color: #636e72; padding: 0 20px; line-height: 1.6; }
+        .fb-title { font-size: 28px; font-weight: bold; margin-bottom: 10px; }
+        .fb-detail { font-size: 18px; color: #636e72; padding: 0 20px; line-height: 1.6; }
         .math-expl { background: #f1f2f6; padding: 10px; border-radius: 8px; margin-top: 10px; font-family: monospace; color: #d63031; }
+
+        /* 错题对比显示 */
+        .answer-comparison {
+            display: flex; justify-content: center; gap: 20px; margin: 15px 0;
+        }
+        .user-answer {
+            background: #ffebee; padding: 10px; border-radius: 8px; color: #c62828; font-weight: bold;
+        }
+        .correct-answer {
+            background: #e8f5e9; padding: 10px; border-radius: 8px; color: #2e7d32; font-weight: bold;
+        }
+
+        /* Emoji雨动画 */
+        .emoji-rain {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100;
+            overflow: hidden;
+        }
+        .emoji-drop {
+            position: absolute; font-size: 24px; animation: fall linear forwards;
+        }
+        @keyframes fall {
+            to { transform: translateY(100vh); opacity: 0; }
+        }
+
+        /* 激光特效 */
+        .laser-effect {
+            position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none;
+            background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, transparent 70%);
+            opacity: 0;
+            z-index: 100;
+        }
+        .laser-effect.active {
+            animation: laserBlast 0.5s ease-out forwards;
+        }
+        @keyframes laserBlast {
+            0% { opacity: 0.8; transform: scale(0.5); }
+            100% { opacity: 0; transform: scale(1.5); }
+        }
+
+        /* 粒子特效 */
+        .particle {
+            position: absolute; width: 6px; height: 6px; border-radius: 50%; pointer-events: none;
+            z-index: 100;
+        }
 
         /* 动画类 */
         .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
         .pop { animation: pop 0.3s ease-out; }
+        .screen-shake { animation: screenShake 0.5s ease-in-out; }
         @keyframes shake { 10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(4px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-6px, 0, 0); } 40%, 60% { transform: translate3d(6px, 0, 0); } }
         @keyframes pop { 0% { transform: scale(0.9); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        @keyframes screenShake { 0%, 100% { transform: translateX(0); } 10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); } 20%, 40%, 60%, 80% { transform: translateX(5px); } }
         
         .combo-text.animate { animation: comboPop 0.4s ease-out; }
         @keyframes comboPop { 0% { transform: scale(1); } 50% { transform: scale(1.5) rotate(-10deg); color: #e17055; } 100% { transform: scale(1); } }
@@ -110,17 +203,21 @@
         /* 辅助类 */
         sub, sup { font-size: 0.6em; }
         .hidden { display: none !important; }
-        .text-hint { font-size: 13px; color: #b2bec3; margin-top: 15px; }
+        .text-hint { font-size: 16px; color: #b2bec3; margin-top: 15px; } /* 增大字体 */
+        .anti-trap-warning { color: #f0932b; font-size: 14px; margin-top: 10px; }
 
     </style>
 </head>
 <body>
 
+    <!-- 背景分子动画 -->
+    <div id="molecules"></div>
+
     <div class="timer-bar-bg"><div class="timer-bar-fill" id="timerBar"></div></div>
 
     <div class="hud-container">
-        <div class="hud-box">
-            <div class="lives" id="livesDisplay">❤❤❤</div>
+        <div class="hud-box" id="livesBox">
+            <div class="lives" id="livesDisplay">❤❤❤❤❤</div>
         </div>
         <div class="hud-box">
             <div class="stage-badge" id="stageName">准备开始</div>
@@ -142,7 +239,32 @@
             <div class="q-display" id="qDisplay"></div>
             <div class="input-area">
                 <input type="text" id="inputAns" placeholder="点击此处输入" autocomplete="off" />
+                <div class="anti-trap-warning hidden" id="antiTrapWarning">不用带电荷</div>
             </div>
+            
+            <!-- 快捷输入栏 -->
+            <div class="quick-input">
+                <div class="quick-btn" data-value="()">()</div>
+                <div class="quick-btn" data-value="²">²</div>
+                <div class="quick-btn" data-value="³">³</div>
+                <div class="quick-btn" data-value="⁴">⁴</div>
+                <div class="quick-btn" data-value="⁵">⁵</div>
+                <div class="quick-btn" data-value="⁶">⁶</div>
+                <div class="quick-btn" data-value="⁷">⁷</div>
+                <div class="quick-btn" data-value="⁸">⁸</div>
+                <div class="quick-btn" data-value="⁹">⁹</div>
+                <div class="quick-btn" data-value="₀">₀</div>
+                <div class="quick-btn" data-value="₁">₁</div>
+                <div class="quick-btn" data-value="₂">₂</div>
+                <div class="quick-btn" data-value="₃">₃</div>
+                <div class="quick-btn" data-value="₄">₄</div>
+                <div class="quick-btn" data-value="₅">₅</div>
+                <div class="quick-btn" data-value="₆">₆</div>
+                <div class="quick-btn" data-value="₇">₇</div>
+                <div class="quick-btn" data-value="₈">₈</div>
+                <div class="quick-btn" data-value="₉">₉</div>
+            </div>
+            
             <button class="btn-main" onclick="Game.check()">提交 (Enter)</button>
             <div class="text-hint" id="hintText"></div>
         </div>
@@ -157,9 +279,16 @@
             <div class="fb-icon" id="fbIcon">❌</div>
             <div class="fb-title" id="fbTitle">错啦</div>
             <div class="fb-detail" id="fbDetail"></div>
+            <div class="answer-comparison" id="answerComparison"></div>
             <button class="btn-main" style="margin-top:20px; width:auto; padding: 10px 30px;" onclick="UI.hideFeedback()">继续</button>
         </div>
     </div>
+
+    <!-- 激光特效 -->
+    <div class="laser-effect" id="laserEffect"></div>
+
+    <!-- Emoji雨容器 -->
+    <div class="emoji-rain" id="emojiRain"></div>
 
 <script>
 /* ================= 核心数据库 (初中课本精准版) ================= */
@@ -245,6 +374,7 @@ const Utils = {
     rand: arr => arr[Math.floor(Math.random() * arr.length)],
     gcd: (a, b) => b === 0 ? a : Utils.gcd(b, a % b),
     toSub: str => String(str).replace(/\d+/g, m => `<sub>${m}</sub>`),
+    toSup: str => String(str).replace(/\d+/g, m => `<sup>${m}</sup>`),
     normalizeName: str => String(str).trim().replace(/\s+/g,'').toUpperCase(),
     toSup: val => {
         const num = Math.abs(val);
@@ -276,6 +406,12 @@ const Sound = {
             g.gain.setValueAtTime(0.2, now);
             g.gain.linearRampToValueAtTime(0.01, now + 0.3);
             osc.start(now); osc.stop(now + 0.3);
+        } else if (type === 'warning') {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(200, now);
+            g.gain.setValueAtTime(0.1, now);
+            g.gain.linearRampToValueAtTime(0.01, now + 0.1);
+            osc.start(now); osc.stop(now + 0.1);
         }
     }
 };
@@ -285,7 +421,7 @@ const Game = {
     state: 'menu', 
     score: 0,
     combo: 0,
-    lives: 3,
+    lives: 5, // 5条命
     stageIdx: 0,
     progress: 0, 
     timer: null,
@@ -293,13 +429,15 @@ const Game = {
     totalTime: 0,
     currentQ: null,
     history: [], 
+    isFirstQuestion: true, // 用于判断是否显示完整提示
 
     start() {
         this.stageIdx = 0;
         this.score = 0;
-        this.lives = 3;
+        this.lives = 5;
         this.combo = 0;
         this.history = [];
+        this.isFirstQuestion = true;
         this.showStageMenu();
     },
 
@@ -321,6 +459,7 @@ const Game = {
         }
         UI.hideMenu();
         this.progress = 0;
+        this.isFirstQuestion = true; // 重置第一题标志
         this.state = 'playing';
         this.nextQuestion();
     },
@@ -357,7 +496,7 @@ const Game = {
                 // 只显示中文名，如“钠”
                 q.html = `<div class="ion-block" style="border:none; background:transparent; font-size:40px">${item.elementName || item.name}</div>`;
                 q.ans = item.sym; 
-                q.hint = "大小写敏感，如 Na (不要带电荷)";
+                q.hint = this.isFirstQuestion ? "大小写敏感，如 Na (不要带电荷)" : ""; // 只在第一题显示完整提示
                 q.data = item;
                 signature = "elem_" + item.disp;
             }
@@ -367,7 +506,7 @@ const Game = {
                 q.tag = '写离子符号';
                 const displayName = (item.ionNames && item.ionNames.length > 0) ? item.ionNames[0] : item.name + (item.isGroup?"":"离子");
                 q.html = `<div class="ion-block" style="border:none; background:transparent; font-size:40px">${displayName}</div>`;
-                q.hint = "大小写敏感，如 Na+";
+                q.hint = this.isFirstQuestion ? "大小写敏感，如 Na+" : ""; // 只在第一题显示完整提示
                 q.data = item;
                 signature = "sym_" + item.disp;
             }
@@ -378,7 +517,7 @@ const Game = {
                 const displayName = (item.ionNames && item.ionNames.length > 0) ? item.ionNames[0] : item.name + (item.isGroup?"":"离子");
                 q.html = `<div class="ion-block" style="border:none; background:transparent; font-size:40px">${displayName}</div>`;
                 q.ans = (item.val > 0 ? '+' : '') + item.val;
-                q.hint = "必须带符号，如 +1, -2";
+                q.hint = this.isFirstQuestion ? "必须带符号，如 +1, -2" : ""; // 只在第一题显示完整提示
                 q.data = item;
                 signature = "val_" + item.disp;
             }
@@ -415,7 +554,7 @@ const Game = {
                 if (aCount > 1) aPart = an.isGroup ? `(${an.sym})${aCount}` : `${an.sym}${aCount}`;
 
                 q.ans = cPart + aPart;
-                q.hint = "正价在前，负价在后 (大小写敏感)";
+                q.hint = this.isFirstQuestion ? "正价在前，负价在后 (大小写敏感)" : ""; // 只在第一题显示完整提示
                 q.data = { cat, an, cCount, aCount }; 
                 signature = "form_" + cat.disp + "_" + an.disp;
             }
@@ -431,6 +570,9 @@ const Game = {
         this.totalTime = stage.time;
         this.timeLeft = stage.time;
         UI.startTimer();
+        
+        // 重置第一题标志
+        this.isFirstQuestion = false;
     },
 
     check() {
@@ -471,20 +613,35 @@ const Game = {
         }
 
         if (correct) {
-            this.handleSuccess();
+            this.handleSuccess(userValRaw);
         } else {
             this.handleFail(userValRaw);
         }
     },
 
-    handleSuccess() {
+    handleSuccess(userAnswer) {
         Sound.play('good');
         this.combo++;
         this.progress++;
         this.score += 10 + (this.combo * 5);
+        
+        // 发射激光特效
+        UI.showLaserEffect();
+        
+        // 屏幕震动
+        document.body.classList.add('screen-shake');
+        setTimeout(() => document.body.classList.remove('screen-shake'), 500);
+        
+        // 随机夸奖语句
+        const compliments = ["太强了！", "化学天才！", "完美！", "学霸！", "无敌！", "厉害了！", "牛人！", "神级操作！"];
+        const compliment = Utils.rand(compliments);
+        
+        // Emoji雨
+        UI.showEmojiRain(compliment);
+        
         UI.updateHUD();
         UI.animateSuccess();
-        setTimeout(() => this.nextQuestion(), 500);
+        setTimeout(() => this.nextQuestion(), 1000); // 延长等待时间以便展示特效
     },
 
     handleFail(wrongAns) {
@@ -538,7 +695,8 @@ const Game = {
             }
         }
 
-        UI.showFeedback(title, detail, math);
+        // 显示用户答案与正确答案对比
+        UI.showFeedbackWithComparison(title, detail, math, wrongAns, this.currentQ.ans);
     },
 
     tick() {
@@ -566,6 +724,14 @@ const UI = {
         document.getElementById('scoreDisplay').innerText = Game.score;
         document.getElementById('comboDisplay').innerText = Game.combo;
         document.getElementById('livesDisplay').innerText = '❤'.repeat(Game.lives);
+        
+        // 更新生命值显示的样式
+        const livesBox = document.getElementById('livesBox');
+        livesBox.className = 'hud-box';
+        if (Game.lives === 1) {
+            livesBox.classList.add('danger-flash', 'heart-beat');
+        }
+        
         document.getElementById('stageName').innerText = STAGES[Game.stageIdx].name;
         
         // 更新关卡进度条
@@ -590,9 +756,9 @@ const UI = {
     updateTimer(pct) {
         const bar = document.getElementById('timerBar');
         bar.style.width = (pct * 100) + '%';
-        if (pct < 0.3) bar.style.background = '#eb4d4b';
-        else if (pct < 0.6) bar.style.background = '#f0932b';
-        else bar.style.background = '#6ab04c';
+        if (pct < 0.3) bar.style.background = 'linear-gradient(90deg, #eb4d4b, #ff6b6b)';
+        else if (pct < 0.6) bar.style.background = 'linear-gradient(90deg, #f0932b, #ff9a00)';
+        else bar.style.background = 'linear-gradient(90deg, #6ab04c, #2ecc71)';
     },
 
     animateSuccess() {
@@ -605,6 +771,24 @@ const UI = {
         const overlay = document.getElementById('feedbackOverlay');
         document.getElementById('fbTitle').innerText = title;
         document.getElementById('fbDetail').innerHTML = detail + (math ? `<div class="math-expl">${math}</div>` : '');
+        document.getElementById('answerComparison').innerHTML = ''; // 清空对比区域
+        overlay.classList.add('active');
+        Game.state = 'feedback';
+    },
+
+    showFeedbackWithComparison(title, detail, math, userAns, correctAns) {
+        const overlay = document.getElementById('feedbackOverlay');
+        document.getElementById('fbTitle').innerText = title;
+        document.getElementById('fbDetail').innerHTML = detail + (math ? `<div class="math-expl">${math}</div>` : '');
+        
+        // 显示用户答案与正确答案对比
+        document.getElementById('answerComparison').innerHTML = `
+            <div class="answer-comparison">
+                <div class="user-answer">你的答案: ${userAns}</div>
+                <div class="correct-answer">正确答案: ${correctAns}</div>
+            </div>
+        `;
+        
         overlay.classList.add('active');
         Game.state = 'feedback';
     },
@@ -630,12 +814,168 @@ const UI = {
     hideMenu() {
         document.getElementById('menuArea').classList.add('hidden');
         document.getElementById('playArea').classList.remove('hidden');
+    },
+    
+    showLaserEffect() {
+        const laser = document.getElementById('laserEffect');
+        laser.classList.remove('active');
+        void laser.offsetWidth; // 强制重排
+        laser.classList.add('active');
+    },
+    
+    showEmojiRain(message) {
+        const container = document.getElementById('emojiRain');
+        container.innerHTML = ''; // 清空之前的emoji
+        
+        // 添加夸奖文字
+        const messageEl = document.createElement('div');
+        messageEl.textContent = message;
+        messageEl.style.position = 'absolute';
+        messageEl.style.top = '20%';
+        messageEl.style.left = '50%';
+        messageEl.style.transform = 'translateX(-50%)';
+        messageEl.style.fontSize = '28px';
+        messageEl.style.fontWeight = 'bold';
+        messageEl.style.color = '#f0932b';
+        messageEl.style.zIndex = '101';
+        messageEl.style.animation = 'fall 2s linear forwards';
+        container.appendChild(messageEl);
+        
+        // 创建emoji雨
+        for (let i = 0; i < 20; i++) {
+            setTimeout(() => {
+                const emoji = document.createElement('div');
+                const emojis = ['⭐', '🌟', '✨', '🎉', '🏆', '🎯', '🔥', '🚀', '💎', '🏆'];
+                emoji.textContent = Utils.rand(emojis);
+                emoji.className = 'emoji-drop';
+                emoji.style.left = Math.random() * 100 + 'vw';
+                emoji.style.animationDuration = (Math.random() * 2 + 1) + 's';
+                emoji.style.fontSize = (Math.random() * 20 + 20) + 'px';
+                container.appendChild(emoji);
+                
+                // 移除完成后清理DOM
+                setTimeout(() => {
+                    if (emoji.parentNode) {
+                        emoji.parentNode.removeChild(emoji);
+                    }
+                }, 3000);
+            }, i * 100);
+        }
+        
+        // 清理消息
+        setTimeout(() => {
+            if (messageEl.parentNode) {
+                messageEl.parentNode.removeChild(messageEl);
+            }
+        }, 3000);
     }
 };
 
+// 初始化背景分子动画
+function initMolecules() {
+    const container = document.getElementById('molecules');
+    for (let i = 0; i < 20; i++) {
+        const molecule = document.createElement('div');
+        molecule.className = 'molecule';
+        molecule.style.left = Math.random() * 100 + 'vw';
+        molecule.style.top = Math.random() * 100 + 'vh';
+        molecule.style.animationDuration = (Math.random() * 20 + 10) + 's';
+        molecule.style.opacity = Math.random() * 0.5 + 0.1;
+        molecule.style.backgroundColor = `rgba(${Math.floor(Math.random() * 100 + 155)}, ${Math.floor(Math.random() * 100 + 155)}, ${Math.floor(Math.random() * 100 + 155)}, ${Math.random() * 0.5 + 0.1})`;
+        container.appendChild(molecule);
+    }
+}
+
+// 快捷输入按钮事件
+document.querySelectorAll('.quick-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const input = document.getElementById('inputAns');
+        const value = btn.getAttribute('data-value');
+        input.value += value;
+        input.focus();
+    });
+});
+
+// 防坑机制：检测元素符号输入时是否带电荷
+document.getElementById('inputAns').addEventListener('input', (e) => {
+    const warningEl = document.getElementById('antiTrapWarning');
+    const inputValue = e.target.value;
+    const currentQ = Game.currentQ;
+    
+    // 如果是元素符号题且输入了电荷
+    if (currentQ && currentQ.type === 'elementSymbol' && (inputValue.includes('+') || inputValue.includes('-'))) {
+        warningEl.classList.remove('hidden');
+        // 播放警告音效
+        Sound.play('warning');
+    } else {
+        warningEl.classList.add('hidden');
+    }
+});
+
+// 键盘按键粒子特效
+document.getElementById('inputAns').addEventListener('keydown', (e) => {
+    // 创建粒子特效
+    createParticleEffect(e);
+});
+
+function createParticleEffect(event) {
+    const input = document.getElementById('inputAns');
+    const rect = input.getBoundingClientRect();
+    
+    for (let i = 0; i < 5; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = (rect.left + rect.width/2) + 'px';
+        particle.style.top = (rect.top + rect.height/2) + 'px';
+        
+        // 随机颜色
+        const colors = ['#4834d4', '#6ab04c', '#f0932b', '#eb4d4b', '#686de0'];
+        particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        
+        document.body.appendChild(particle);
+        
+        // 设置随机运动轨迹
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 2 + Math.random() * 3;
+        const vx = Math.cos(angle) * speed;
+        const vy = Math.sin(angle) * speed;
+        
+        let x = parseFloat(particle.style.left);
+        let y = parseFloat(particle.style.top);
+        
+        // 动画函数
+        const animate = () => {
+            x += vx;
+            y += vy;
+            particle.style.left = x + 'px';
+            particle.style.top = y + 'px';
+            
+            // 逐渐消失
+            const opacity = parseFloat(particle.style.opacity) || 1;
+            particle.style.opacity = opacity - 0.02;
+            
+            if (opacity > 0) {
+                requestAnimationFrame(animate);
+            } else {
+                if (particle.parentNode) {
+                    particle.parentNode.removeChild(particle);
+                }
+            }
+        };
+        
+        requestAnimationFrame(animate);
+    }
+}
+
 document.getElementById('inputAns').addEventListener('keyup', e => { if (e.key === 'Enter') Game.check(); });
+
+// 初始化
+initMolecules();
 Game.start();
 
 </script>
 </body>
 </html>
+
+
+
